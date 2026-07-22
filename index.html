@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AkrapCHAT</title>
   <style>
-    /* CSS Переменные для переключения тем */
+    /* CSS Переменные для переключения тем с плавным переходом */
     :root {
       --bg-color: #0e1621;
       --header-bg: #17212b;
@@ -49,7 +49,8 @@
       justify-content: center; 
       align-items: center; 
       height: 100vh; 
-      transition: background 0.3s;
+      /* Плавный переход тем для фона всей страницы */
+      transition: background 0.4s ease;
     }
 
     .chat-container { 
@@ -61,7 +62,7 @@
       flex-direction: column; 
       overflow: hidden; 
       position: relative;
-      transition: background 0.3s;
+      transition: background 0.4s ease;
     }
 
     @media (min-width: 500px) {
@@ -84,7 +85,7 @@
       gap: 15px;
       z-index: 10;
       box-shadow: 0 1px 3px var(--header-shadow);
-      transition: background 0.3s, color 0.3s;
+      transition: background 0.4s ease, color 0.4s ease;
     }
     
     .chat-header .avatar {
@@ -97,6 +98,7 @@
       align-items: center;
       justify-content: center;
       font-size: 18px;
+      transition: background 0.4s ease;
     }
 
     .chat-header .title-area {
@@ -105,7 +107,7 @@
       flex: 1;
     }
 
-    /* Кнопки действий в шапке (смена имени, тема) */
+    /* Кнопки действий в шапке */
     .header-actions {
       display: flex;
       align-items: center;
@@ -118,11 +120,11 @@
       padding: 5px;
       border-radius: 50%;
       user-select: none;
-      transition: transform 0.2s;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .action-btn:hover {
-      transform: scale(1.15);
+      transform: scale(1.2);
     }
 
     /* Список сообщений */
@@ -139,6 +141,18 @@
     .messages-list::-webkit-scrollbar { width: 6px; }
     .messages-list::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
 
+    /* Анимация появления сообщения */
+    @keyframes messageSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
     /* Облачко сообщения */
     .message { 
       max-width: 85%; 
@@ -152,7 +166,8 @@
       flex-direction: column;
       color: var(--text-color);
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      transition: background 0.3s, color 0.3s;
+      transition: background 0.4s ease, color 0.4s ease;
+      animation: messageSlideIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
     }
 
     .message.my { 
@@ -167,25 +182,13 @@
       border-bottom-left-radius: 4px; 
     }
 
-    /* Системное уведомление */
-    .message.system {
-      align-self: center;
-      background: rgba(127, 145, 164, 0.15);
-      color: var(--subtitle-color);
-      font-size: 13px;
-      text-align: center;
-      border-radius: 8px;
-      padding: 6px 14px;
-      max-width: 95%;
-      box-shadow: none;
-    }
-
     /* Имя автора (только для чужих) */
     .message-author { 
       font-size: 13px; 
       color: var(--author-color); 
       font-weight: 600; 
       margin-bottom: 2px; 
+      transition: color 0.4s ease;
     }
 
     /* Текст сообщения */
@@ -193,7 +196,7 @@
       white-space: pre-wrap;
     }
 
-    /* Блок метаданных (время, пометка, кнопки) */
+    /* Блок метаданных */
     .message-meta { 
       display: flex; 
       align-items: center;
@@ -230,11 +233,47 @@
     .msg-controls span {
       cursor: pointer;
       font-size: 13px;
-      transition: transform 0.15s;
+      transition: transform 0.15s ease;
     }
     
     .msg-controls span:hover {
-      transform: scale(1.2);
+      transform: scale(1.25);
+    }
+
+    /* Индикатор набора текста («печатает...») */
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      background: var(--other-msg-bg);
+      padding: 10px 14px;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+      margin-bottom: 5px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      animation: messageSlideIn 0.3s ease forwards;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      height: 14px;
+    }
+
+    .typing-dots span {
+      width: 6px;
+      height: 6px;
+      background: var(--subtitle-color);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1.0); }
     }
 
     /* Поле ввода */
@@ -244,7 +283,7 @@
       background: var(--header-bg); 
       gap: 10px; 
       align-items: center;
-      transition: background 0.3s;
+      transition: background 0.4s ease;
     }
 
     .chat-input input { 
@@ -256,7 +295,7 @@
       color: var(--text-color); 
       outline: none; 
       font-size: 15px;
-      transition: background 0.3s, color 0.3s;
+      transition: background 0.4s ease, color 0.4s ease;
     }
     
     .chat-input input::placeholder {
@@ -274,11 +313,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: opacity 0.2s;
+      position: relative;
+      overflow: hidden;
+      transition: opacity 0.2s, background 0.4s ease;
     }
 
     .chat-input button:hover { 
-      opacity: 0.8; 
+      opacity: 0.85; 
     }
     
     .send-icon {
@@ -286,6 +327,13 @@
       height: 20px;
       fill: currentColor;
       margin-left: 3px; 
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    }
+
+    /* Анимация клика по самолетику */
+    .chat-input button.sending .send-icon {
+      transform: translate(14px, -14px) scale(0.6);
+      opacity: 0;
     }
   </style>
 </head>
@@ -303,11 +351,20 @@
     </div>
   </div>
   
-  <div class="messages-list" id="messages"></div>
+  <div class="messages-list" id="messages">
+    <!-- Индикатор «печатает» -->
+    <div class="typing-indicator" id="typing-indicator">
+      <div class="typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
   
   <form class="chat-input" id="chat-form">
     <input type="text" id="message-input" placeholder="Сообщение" required autocomplete="off">
-    <button type="submit">
+    <button type="submit" id="send-btn">
       <svg class="send-icon" viewBox="0 0 24 24">
         <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
       </svg>
@@ -317,9 +374,9 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  // Логика переключения тем
+  // Логика плавной смены тем
   const themeBtn = document.getElementById('theme-btn');
   let currentTheme = localStorage.getItem('chat_theme') || 'dark';
   
@@ -357,7 +414,9 @@
   const messagesDiv = document.getElementById('messages');
   const form = document.getElementById('chat-form');
   const input = document.getElementById('message-input');
+  const sendBtn = document.getElementById('send-btn');
   const changeNameBtn = document.getElementById('change-name-btn');
+  const typingIndicator = document.getElementById('typing-indicator');
 
   // Уникальный ID устройства
   let userId = localStorage.getItem('chat_user_id');
@@ -366,26 +425,9 @@
     localStorage.setItem('chat_user_id', userId);
   }
 
-  // Функция проверки: занято ли имя ДРУГИМ устройством в базе
-  async function checkNameTaken(candidateName) {
-    const snapshot = await get(messagesRef);
-    if (!snapshot.exists()) return false;
-    
-    let isTaken = false;
-    snapshot.forEach((child) => {
-      const data = child.val();
-      if (data.author && data.author.toLowerCase() === candidateName.toLowerCase()) {
-        if (data.userId && data.userId !== userId) {
-          isTaken = true;
-        }
-      }
-    });
-    return isTaken;
-  }
-
   let username = localStorage.getItem('chat_username');
 
-  async function promptForUsername(isChange = false) {
+  function promptForUsername(isChange = false) {
     let promptMsg = isChange ? 'Введите новое имя:' : 'Введите ваше имя:';
     let enteredName = prompt(promptMsg, username || '');
 
@@ -397,19 +439,7 @@
       return;
     }
 
-    enteredName = enteredName.trim();
-    let oldUsername = username;
-    
-    const taken = await checkNameTaken(enteredName);
-    
-    if (taken && oldUsername !== enteredName) {
-      push(messagesRef, {
-        system: true,
-        text: `⚠️ Внимание: пользователь ${enteredName} попытался занять этот ник, но данный ник уже занят!`
-      });
-    }
-
-    username = enteredName;
+    username = enteredName.trim();
     localStorage.setItem('chat_username', username);
 
     if (isChange) {
@@ -446,10 +476,6 @@
   };
 
   function buildMessageHTML(id, data) {
-    if (data.system) {
-      return `<div class="message-text">${data.text}</div>`;
-    }
-
     const isMy = data.userId === userId;
     
     const timestamp = data.timestamp ? data.timestamp : Date.now();
@@ -479,17 +505,37 @@
     `;
   }
 
-  form.addEventListener('submit', async (e) => {
+  // Имитация активности «печатает» при вводе текста
+  let typingTimer;
+  input.addEventListener('input', () => {
+    clearTimeout(typingTimer);
+    // Можно показать блок печати для примера интерфейса
+    // typingIndicator.style.display = 'block';
+    typingTimer = setTimeout(() => {
+      // typingIndicator.style.display = 'none';
+    }, 1000);
+  });
+
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = input.value.trim();
     if (text) {
+      // Запуск анимации отправки самолетика
+      sendBtn.classList.add('sending');
+
       push(messagesRef, { 
         author: username, 
         userId: userId,
         text: text,
         timestamp: Date.now()
       });
-      input.value = ''; // <--- Исправлено! Теперь поле чистое.
+
+      input.value = '';
+
+      // Возврат иконки на место после завершения анимации
+      setTimeout(() => {
+        sendBtn.classList.remove('sending');
+      }, 300);
     }
   });
 
@@ -498,18 +544,13 @@
     const id = snapshot.key;
     
     const msgEl = document.createElement('div');
-    
-    if (data.system) {
-      msgEl.className = 'message system';
-    } else {
-      const isMy = data.userId === userId;
-      msgEl.className = `message ${isMy ? 'my' : 'other'}`;
-    }
-    
+    const isMy = data.userId === userId;
+    msgEl.className = `message ${isMy ? 'my' : 'other'}`;
     msgEl.id = `msg-${id}`; 
     msgEl.innerHTML = buildMessageHTML(id, data);
     
-    messagesDiv.appendChild(msgEl);
+    // Вставляем перед индикатором «печатает»
+    messagesDiv.insertBefore(msgEl, typingIndicator);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   });
 
