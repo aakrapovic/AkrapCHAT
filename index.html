@@ -167,7 +167,7 @@
       border-bottom-left-radius: 4px; 
     }
 
-    /* Системное уведомление / Надпись о занятом нике */
+    /* Системное уведомление */
     .message.system {
       align-self: center;
       background: rgba(127, 145, 164, 0.15);
@@ -221,7 +221,6 @@
       margin-top: 0;
     }
     
-    /* Плавный раскрывающийся эффект при наведении */
     .message:hover .msg-controls {
       max-height: 25px;
       opacity: 1;
@@ -298,7 +297,6 @@
     <div class="title-area">
       <div class="title">Новый чат</div>
     </div>
-    <!-- Кнопки управления в шапке -->
     <div class="header-actions">
       <div class="action-btn" id="change-name-btn" title="Сменить имя">👤</div>
       <div class="action-btn" id="theme-btn" title="Сменить тему">🌞</div>
@@ -342,7 +340,6 @@
     }
   });
 
-  // Ваши ключи Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyD5L07zQ8Tpx71b-ykrh4dqasX_4ypXpyc",
     authDomain: "akrapmsg.firebaseapp.com",
@@ -362,14 +359,14 @@
   const input = document.getElementById('message-input');
   const changeNameBtn = document.getElementById('change-name-btn');
 
-  // Уникальный ID устройства для отслеживания владельца ника
+  // Уникальный ID устройства
   let userId = localStorage.getItem('chat_user_id');
   if (!userId) {
     userId = 'usr_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
     localStorage.setItem('chat_user_id', userId);
   }
 
-  // Функция проверки: занято ли имя ДРУГИМ пользователем в истории чата
+  // Функция проверки: занято ли имя ДРУГИМ устройством в базе
   async function checkNameTaken(candidateName) {
     const snapshot = await get(messagesRef);
     if (!snapshot.exists()) return false;
@@ -377,8 +374,8 @@
     let isTaken = false;
     snapshot.forEach((child) => {
       const data = child.val();
+      // Проверяем совпадение никнейма и что у этого сообщения другой userId
       if (data.author && data.author.toLowerCase() === candidateName.toLowerCase()) {
-        // Если имя использовалось кем-то, у кого другой userId
         if (data.userId && data.userId !== userId) {
           isTaken = true;
         }
@@ -387,7 +384,6 @@
     return isTaken;
   }
 
-  // Логика инициализации и смены имени (без блокировки, но с отправкой системного сообщения)
   let username = localStorage.getItem('chat_username');
 
   async function promptForUsername(isChange = false) {
@@ -404,18 +400,20 @@
 
     enteredName = enteredName.trim();
     let oldUsername = username;
-    username = enteredName;
-    localStorage.setItem('chat_username', username);
-
-    // Проверяем, занят ли этот ник кем-то другим в базе
-    const taken = await checkNameTaken(username);
-    if (taken && oldUsername !== username) {
-      // Отправляем красивое системное сообщение в чат
+    
+    // Проверяем, занят ли этот ник ДРУГИМ устройством ДО того, как примем его локально
+    const taken = await checkNameTaken(enteredName);
+    
+    if (taken && oldUsername !== enteredName) {
+      // Отправляем красивое системное уведомление в чат (исправлен текст: подставляем enteredName)
       push(messagesRef, {
         system: true,
-        text: `⚠️ Внимание: пользователь ${username} попытался занять этот ник, но данный ник уже занят!`
+        text: `⚠️ Внимание: пользователь ${enteredName} попытался занять этот ник, но данный ник уже занят!`
       });
     }
+
+    username = enteredName;
+    localStorage.setItem('chat_username', username);
 
     if (isChange) {
       location.reload();
@@ -424,11 +422,6 @@
 
   if (!username) {
     promptForUsername(false);
-  } else {
-    // При каждом перезаходе проверяем, не пытаемся ли мы использовать занятый ник
-    checkNameTaken(username).then((taken) => {
-      // Можно опционально проверять при старте, если нужно
-    });
   }
 
   changeNameBtn.addEventListener('click', () => {
@@ -456,13 +449,11 @@
   };
 
   function buildMessageHTML(id, data) {
-    // Если это системное сообщение
     if (data.system) {
       return `<div class="message-text">${data.text}</div>`;
     }
 
-    // Свободная смена имен: «моё» сообщение определяется по имени автора или userId
-    const isMy = data.author === username;
+    const isMy = data.userId === userId;
     
     const timestamp = data.timestamp ? data.timestamp : Date.now();
     const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -501,7 +492,7 @@
         text: text,
         timestamp: Date.now()
       });
-      input.value = '';
+      input.value = false;
     }
   });
 
@@ -514,7 +505,7 @@
     if (data.system) {
       msgEl.className = 'message system';
     } else {
-      const isMy = data.author === username;
+      const isMy = data.userId === userId;
       msgEl.className = `message ${isMy ? 'my' : 'other'}`;
     }
     
