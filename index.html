@@ -376,6 +376,7 @@
       opacity: 1;
     }
 
+    /* Модальные окна */
     .modal-overlay {
       position: absolute;
       top: 0;
@@ -422,8 +423,25 @@
     .modal-desc {
       font-size: 14px;
       opacity: 0.8;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       line-height: 1.4;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--subtitle-color);
+      background: var(--input-bg);
+      color: var(--text-color);
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 20px;
+      transition: border-color 0.2s ease;
+    }
+
+    .modal-input:focus {
+      border-color: var(--author-color);
     }
 
     .modal-buttons {
@@ -527,6 +545,20 @@
   
   <div class="messages-list" id="messages"></div>
 
+  <!-- Модальное окно ввода имени -->
+  <div class="modal-overlay" id="name-modal">
+    <div class="modal-box">
+      <div class="modal-title" id="name-modal-title">Ваше имя</div>
+      <div class="modal-desc" id="name-modal-desc">Введите ваше имя для участия в чате:</div>
+      <input type="text" class="modal-input" id="name-modal-input" autocomplete="off">
+      <div class="modal-buttons">
+        <button class="modal-btn" id="name-modal-cancel">Отмена</button>
+        <button class="modal-btn" id="name-modal-confirm">Продолжить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно удаления сообщения -->
   <div class="modal-overlay" id="delete-modal">
     <div class="modal-box">
       <div class="modal-title">Удаление сообщения</div>
@@ -611,6 +643,15 @@
   const actionBarText = document.getElementById('action-bar-text');
   const cancelActionBtn = document.getElementById('cancel-action');
 
+  // Элементы модалки имени
+  const nameModal = document.getElementById('name-modal');
+  const nameModalTitle = document.getElementById('name-modal-title');
+  const nameModalDesc = document.getElementById('name-modal-desc');
+  const nameModalInput = document.getElementById('name-modal-input');
+  const nameModalCancel = document.getElementById('name-modal-cancel');
+  const nameModalConfirm = document.getElementById('name-modal-confirm');
+  let isNameChangeMode = false;
+
   const deleteModal = document.getElementById('delete-modal');
   const modalCancelBtn = document.getElementById('modal-cancel');
   const modalConfirmBtn = document.getElementById('modal-confirm');
@@ -619,7 +660,6 @@
   let activeReplyData = null;
   let activeEditData = null;
 
-  // Уникальный ID с защитой от совпадений в инкогнито/вкладках
   let userId = localStorage.getItem('chat_user_id');
   if (!userId) {
     userId = 'usr_' + Math.random().toString(36).substring(2, 7) + '_' + Date.now();
@@ -628,32 +668,49 @@
 
   let username = localStorage.getItem('chat_username');
 
-  function promptForUsername(isChange = false) {
-    let promptMsg = isChange ? 'Введите новое имя:' : 'Введите ваше имя:';
-    let enteredName = prompt(promptMsg, username || '');
-
-    if (!enteredName || enteredName.trim() === '') {
-      if (!username) {
-        username = 'Аноним_' + Math.floor(Math.random() * 1000);
-        localStorage.setItem('chat_username', username);
-      }
-      return;
-    }
-
-    username = enteredName.trim();
-    localStorage.setItem('chat_username', username);
-
-    if (isChange) {
-      location.reload();
-    }
+  function openNameModal(isChange = false) {
+    isNameChangeMode = isChange;
+    nameModalTitle.textContent = isChange ? 'Изменение имени' : 'Ваше имя';
+    nameModalDesc.textContent = isChange ? 'Введите новое имя:' : 'Введите ваше имя для участия в чате:';
+    nameModalInput.value = username || '';
+    nameModalCancel.style.display = isChange ? 'block' : 'none'; // при первом входе отменять нельзя
+    nameModal.classList.add('active');
+    setTimeout(() => nameModalInput.focus(), 100);
   }
 
+  function closeNameModal() {
+    nameModal.classList.remove('active');
+  }
+
+  nameModalConfirm.addEventListener('click', () => {
+    let enteredName = nameModalInput.value.trim();
+    if (!enteredName) return;
+
+    username = enteredName;
+    localStorage.setItem('chat_username', username);
+    closeNameModal();
+
+    if (isNameChangeMode) {
+      location.reload();
+    }
+  });
+
+  nameModalInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      nameModalConfirm.click();
+    }
+  });
+
+  nameModalCancel.addEventListener('click', () => {
+    closeNameModal();
+  });
+
   if (!username) {
-    promptForUsername(false);
+    openNameModal(false);
   }
 
   changeNameBtn.addEventListener('click', () => {
-    promptForUsername(true);
+    openNameModal(true);
   });
 
   // Логика индикатора печати
@@ -693,22 +750,15 @@
     clearTimeout(typingTimeout);
   });
 
-  // Слушатель с отладкой в консоль
   onValue(typingRef, (snapshot) => {
     const data = snapshot.val() || {};
-    console.log("Данные узла typing из базы:", data);
-    console.log("Мой текущий userId:", userId);
-
     let activeTypingNames = [];
 
     for (let id in data) {
-      console.log("Проверяем ID:", id, "Мой ID:", userId, "Печатает:", data[id].isTyping);
       if (id !== userId && data[id].isTyping) {
         activeTypingNames.push(data[id].name);
       }
     }
-
-    console.log("Имена тех, кто печатает (кроме меня):", activeTypingNames);
 
     if (activeTypingNames.length > 0) {
       headerTitle.style.display = 'none';
