@@ -109,6 +109,24 @@
       display: flex;
       flex-direction: column;
       flex: 1;
+      overflow: hidden;
+    }
+
+    .chat-header .title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-header .subtitle {
+      font-size: 13px;
+      color: var(--subtitle-color);
+      font-weight: normal;
+      display: none;
+    }
+
+    .chat-header .subtitle.active {
+      display: block;
     }
 
     .header-actions {
@@ -171,7 +189,6 @@
       }
     }
 
-    /* Анимация удаления сообщения (схлопывание) */
     .message.removing {
       animation: messageRemove 0.3s ease forwards;
     }
@@ -199,7 +216,6 @@
       border-bottom-left-radius: 4px; 
     }
 
-    /* Плавная подсветка при редактировании или переходе к сообщению */
     .message.highlight {
       animation: highlightPulse 1.5s ease;
     }
@@ -209,7 +225,6 @@
       100% { filter: brightness(1); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     }
 
-    /* Имя автора */
     .message-author { 
       font-size: 13px; 
       color: var(--author-color); 
@@ -217,7 +232,6 @@
       margin-bottom: 2px; 
     }
 
-    /* Блок цитаты внутри сообщения */
     .message-reply {
       background: rgba(0, 0, 0, 0.15);
       border-left: 3px solid var(--author-color);
@@ -255,7 +269,6 @@
       white-space: pre-wrap;
     }
 
-    /* Блок метаданных */
     .message-meta { 
       display: flex; 
       align-items: center;
@@ -286,7 +299,6 @@
       fill: currentColor;
     }
 
-    /* Панель управления при наведении */
     .msg-controls {
       display: flex;
       gap: 10px;
@@ -313,7 +325,6 @@
       transform: scale(1.15);
     }
 
-    /* Универсальная плашка над инпутом */
     .action-bar {
       display: none;
       background: var(--header-bg);
@@ -365,7 +376,6 @@
       opacity: 1;
     }
 
-    /* Модальное окно удаления */
     .modal-overlay {
       position: absolute;
       top: 0;
@@ -445,7 +455,6 @@
       color: var(--danger-color);
     }
 
-    /* Поле ввода */
     .chat-input-wrapper {
       background: var(--header-bg);
       display: flex;
@@ -507,7 +516,8 @@
   <div class="chat-header">
     <div class="avatar">💬</div>
     <div class="title-area">
-      <div class="title">Новый чат</div>
+      <div class="title" id="header-title">Новый чат</div>
+      <div class="subtitle" id="header-subtitle">печатает...</div>
     </div>
     <div class="header-actions">
       <div class="action-btn" id="change-name-btn" title="Сменить имя">👤</div>
@@ -517,7 +527,6 @@
   
   <div class="messages-list" id="messages"></div>
 
-  <!-- Модальное окно удаления -->
   <div class="modal-overlay" id="delete-modal">
     <div class="modal-box">
       <div class="modal-title">Удаление сообщения</div>
@@ -552,7 +561,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const themeBtn = document.getElementById('theme-btn');
   let currentTheme = localStorage.getItem('chat_theme') || 'dark';
@@ -587,11 +596,14 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const messagesRef = ref(db, 'messages');
+  const typingRef = ref(db, 'typing');
 
   const messagesDiv = document.getElementById('messages');
   const form = document.getElementById('chat-form');
   const input = document.getElementById('message-input');
   const changeNameBtn = document.getElementById('change-name-btn');
+  const headerTitle = document.getElementById('header-title');
+  const headerSubtitle = document.getElementById('header-subtitle');
   
   const actionBar = document.getElementById('action-bar');
   const actionBarLine = document.getElementById('action-bar-line');
@@ -641,6 +653,58 @@
 
   changeNameBtn.addEventListener('click', () => {
     promptForUsername(true);
+  });
+
+  // Логика индикатора печати
+  const myTypingRef = ref(db, 'typing/' + userId);
+  const typingUsers = {};
+  let typingTimeout = null;
+
+  input.addEventListener('input', () => {
+    const text = input.value.trim();
+    if (text.length > 0) {
+      set(myTypingRef, {
+        name: username,
+        isTyping: true
+      });
+      onDisconnect(myTypingRef).remove();
+
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        remove(myTypingRef);
+      }, 2000);
+    } else {
+      remove(myTypingRef);
+    }
+  });
+
+  form.addEventListener('submit', () => {
+    remove(myTypingRef);
+    clearTimeout(typingTimeout);
+  });
+
+  onValue(typingRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    let activeTypingNames = [];
+
+    for (let id in data) {
+      if (id !== userId && data[id].isTyping) {
+        activeTypingNames.push(data[id].name);
+      }
+    }
+
+    if (activeTypingNames.length > 0) {
+      headerTitle.style.display = 'none';
+      headerSubtitle.classList.add('active');
+      if (activeTypingNames.length === 1) {
+        headerSubtitle.textContent = `${activeTypingNames[0]} печатает...`;
+      } else {
+        headerSubtitle.textContent = `несколько человек печатают...`;
+      }
+    } else {
+      headerSubtitle.classList.remove('active');
+      headerTitle.style.display = 'block';
+    }
   });
 
   window.copyMessage = function(element, text) {
@@ -722,13 +786,10 @@
 
   modalConfirmBtn.addEventListener('click', () => {
     if (messageToDeleteId) {
-      // Запускаем анимацию удаления на элементе
       const msgEl = document.getElementById(`msg-${messageToDeleteId}`);
       if (msgEl) {
         msgEl.classList.add('removing');
       }
-      
-      // Небольшая задержка перед реальным удалением из базы, чтобы проигралась анимация
       setTimeout(() => {
         const msgRef = ref(db, 'messages/' + messageToDeleteId);
         remove(msgRef);
@@ -822,7 +883,6 @@
         edited: true 
       });
       
-      // Подсвечиваем сообщение после изменения
       setTimeout(() => {
         const editedEl = document.getElementById(`msg-${activeEditData}`);
         if (editedEl) {
@@ -884,7 +944,6 @@
     const msgEl = document.getElementById(`msg-${id}`);
     
     if (msgEl) {
-      // Если анимация удаления еще не запустилась (например, удалили из другого клиента)
       if (!msgEl.classList.contains('removing')) {
         msgEl.classList.add('removing');
         setTimeout(() => msgEl.remove(), 280);
