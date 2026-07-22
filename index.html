@@ -655,7 +655,7 @@
     promptForUsername(true);
   });
 
-  // Стабильная логика индикатора печати
+  // Логика индикатора печати
   const myTypingRef = ref(db, 'typing/' + userId);
   let typingTimeout = null;
   let isCurrentlyTyping = false;
@@ -692,15 +692,22 @@
     clearTimeout(typingTimeout);
   });
 
+  // Слушатель с отладкой в консоль
   onValue(typingRef, (snapshot) => {
     const data = snapshot.val() || {};
+    console.log("Данные узла typing из базы:", data);
+    console.log("Мой текущий userId:", userId);
+
     let activeTypingNames = [];
 
     for (let id in data) {
+      console.log("Проверяем ID:", id, "Мой ID:", userId, "Печатает:", data[id].isTyping);
       if (id !== userId && data[id].isTyping) {
         activeTypingNames.push(data[id].name);
       }
     }
+
+    console.log("Имена тех, кто печатает (кроме меня):", activeTypingNames);
 
     if (activeTypingNames.length > 0) {
       headerTitle.style.display = 'none';
