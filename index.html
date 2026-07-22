@@ -655,30 +655,39 @@
     promptForUsername(true);
   });
 
-  // Логика индикатора печати
+  // Стабильная логика индикатора печати
   const myTypingRef = ref(db, 'typing/' + userId);
-  const typingUsers = {};
   let typingTimeout = null;
+  let isCurrentlyTyping = false;
 
   input.addEventListener('input', () => {
     const text = input.value.trim();
+    
     if (text.length > 0) {
-      set(myTypingRef, {
-        name: username,
-        isTyping: true
-      });
-      onDisconnect(myTypingRef).remove();
+      if (!isCurrentlyTyping) {
+        isCurrentlyTyping = true;
+        set(myTypingRef, {
+          name: username,
+          isTyping: true
+        });
+        onDisconnect(myTypingRef).remove();
+      }
 
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
+        isCurrentlyTyping = false;
         remove(myTypingRef);
-      }, 2000);
+      }, 3000);
+      
     } else {
+      isCurrentlyTyping = false;
       remove(myTypingRef);
+      clearTimeout(typingTimeout);
     }
   });
 
   form.addEventListener('submit', () => {
+    isCurrentlyTyping = false;
     remove(myTypingRef);
     clearTimeout(typingTimeout);
   });
