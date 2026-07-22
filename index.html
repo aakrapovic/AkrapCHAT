@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AkrapCHAT</title>
+  <style>
+    /* CSS Переменные для переключения тем */
+    :root {
+      --bg-color: #0e1621;
+      --header-bg: #17212b;
+      --input-bg: #242f3d;
+      --text-color: #ffffff;
+      --subtitle-color: #7f91a4;
+      --my-msg-bg: #2b5278;
+      --other-msg-bg: #182533;
+      --meta-my: #7ea4c6;
+      --meta-other: #6c7883;
+      --author-color: #5887b4;
+      --scroll-thumb: rgba(255, 255, 255, 0.1);
+      --header-shadow: rgba(0,0,0,0.2);
+    }
+
+    [data-theme="light"] {
+      --bg-color: #e6ebf0;
+      --header-bg: #ffffff;
+      --input-bg: #f1f3f4;
+      --text-color: #000000;
+      --subtitle-color: #707579;
+      --my-msg-bg: #e3ffc4;
+      --other-msg-bg: #ffffff;
+      --meta-my: #5da063;
+      --meta-other: #a1aab3;
+      --author-color: #3390ec;
+      --scroll-thumb: rgba(0, 0, 0, 0.15);
+      --header-shadow: rgba(0,0,0,0.05);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+    }
+    
+    body { 
+      background: var(--bg-color);
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      transition: background 0.3s;
+    }
+
+    .chat-container { 
+      width: 100%; 
+      max-width: 450px; 
+      height: 100vh; 
+      background: var(--bg-color); 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+      position: relative;
+      transition: background 0.3s;
+    }
+
+    @media (min-width: 500px) {
+      .chat-container {
+        height: 90vh;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      }
+    }
+
+    /* Шапка */
+    .chat-header { 
+      padding: 12px 20px; 
+      background: var(--header-bg); 
+      color: var(--text-color);
+      font-weight: 600; 
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 10;
+      box-shadow: 0 1px 3px var(--header-shadow);
+      transition: background 0.3s, color 0.3s;
+    }
+    
+    .chat-header .avatar {
+      width: 40px;
+      height: 40px;
+      background: var(--author-color);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .chat-header .title-area {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* Кнопка смены темы */
+    .theme-toggle {
+      cursor: pointer;
+      font-size: 20px;
+      padding: 5px;
+      border-radius: 50%;
+      user-select: none;
+      transition: transform 0.2s;
+    }
+    .theme-toggle:hover {
+      transform: scale(1.1);
+    }
+
+    /* Список сообщений */
+    .messages-list { 
+      flex: 1; 
+      padding: 15px; 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 8px; 
+    }
+
+    /* Скроллбар */
+    .messages-list::-webkit-scrollbar { width: 6px; }
+    .messages-list::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
+
+    /* Облачко сообщения */
+    .message { 
+      max-width: 85%; 
+      padding: 6px 12px 6px 12px; 
+      border-radius: 12px; 
+      font-size: 15px; 
+      word-break: break-word; 
+      line-height: 1.4;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      color: var(--text-color);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .message.my { 
+      align-self: flex-end; 
+      background: var(--my-msg-bg); 
+      border-bottom-right-radius: 4px; 
+    }
+    
+    .message.other { 
+      align-self: flex-start; 
+      background: var(--other-msg-bg); 
+      border-bottom-left-radius: 4px; 
+    }
+
+    /* Имя автора (только для чужих) */
+    .message-author { 
+      font-size: 13px; 
+      color: var(--author-color); 
+      font-weight: 600; 
+      margin-bottom: 2px; 
+    }
+
+    /* Текст сообщения */
+    .message-text {
+      white-space: pre-wrap;
+    }
+
+    /* Блок метаданных (время, пометка, кнопки) */
+    .message-meta { 
+      display: flex; 
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      font-size: 11px; 
+      margin-top: 2px;
+    }
+
+    .message.my .message-meta { color: var(--meta-my); }
+    .message.other .message-meta { color: var(--meta-other); }
+
+    .edited-mark {
+      font-style: italic;
+    }
+
+    /* Анимированная панель управления (кнопки ред/уд) */
+    .msg-controls {
+      display: flex;
+      gap: 10px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
+      margin-top: 0;
+    }
+    
+    /* Плавный раскрывающийся эффект при наведении */
+    .message:hover .msg-controls {
+      max-height: 25px;
+      opacity: 1;
+      margin-top: 4px;
+    }
+
+    .msg-controls span {
+      cursor: pointer;
+      font-size: 13px;
+      transition: transform 0.15s;
+    }
+    
+    .msg-controls span:hover {
+      transform: scale(1.2);
+    }
+
+    /* Поле ввода */
+    .chat-input { 
+      display: flex; 
+      padding: 10px 15px; 
+      background: var(--header-bg); 
+      gap: 10px; 
+      align-items: center;
+      transition: background 0.3s;
+    }
+
+    .chat-input input { 
+      flex: 1; 
+      padding: 12px 15px; 
+      border-radius: 20px; 
+      border: none; 
+      background: var(--input-bg); 
+      color: var(--text-color); 
+      outline: none; 
+      font-size: 15px;
+      transition: background 0.3s, color 0.3s;
+    }
+    
+    .chat-input input::placeholder {
+      color: var(--subtitle-color);
+    }
+
+    .chat-input button { 
+      width: 44px;
+      height: 44px;
+      border-radius: 50%; 
+      border: none; 
+      background: var(--author-color); 
+      color: white; 
+      cursor: pointer; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+    }
+
+    .chat-input button:hover { 
+      opacity: 0.8; 
+    }
+    
+    .send-icon {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      margin-left: 3px; 
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="avatar">💬</div>
+    <div class="title-area">
+      <div class="title">Новый чат</div>
+    </div>
+    <!-- Тумблер темы -->
+    <div class="theme-toggle" id="theme-btn" title="Сменить тему">🌞</div>
+  </div>
+  
+  <div class="messages-list" id="messages"></div>
+  
+  <form class="chat-input" id="chat-form">
+    <input type="text" id="message-input" placeholder="Сообщение" required autocomplete="off">
+    <button type="submit">
+      <svg class="send-icon" viewBox="0 0 24 24">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </form>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // Логика переключения тем
+  const themeBtn = document.getElementById('theme-btn');
+  let currentTheme = localStorage.getItem('chat_theme') || 'dark';
+  
+  if (currentTheme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    themeBtn.textContent = '🌙';
+  }
+
+  themeBtn.addEventListener('click', () => {
+    if (document.documentElement.getAttribute('data-theme') === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('chat_theme', 'dark');
+      themeBtn.textContent = '🌞';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('chat_theme', 'light');
+      themeBtn.textContent = '🌙';
+    }
+  });
+
+  // Ваши ключи
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5L07zQ8Tpx71b-ykrh4dqasX_4ypXpyc",
+    authDomain: "akrapmsg.firebaseapp.com",
+    databaseURL: "https://akrapmsg-default-rtdb.firebaseio.com",
+    projectId: "akrapmsg",
+    storageBucket: "akrapmsg.firebasestorage.app",
+    messagingSenderId: "526501884029",
+    appId: "1:526501884029:web:3c26d1ba0b519eb78d0114"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const messagesRef = ref(db, 'messages');
+
+  let username = localStorage.getItem('chat_username');
+  if (!username) {
+    username = prompt('Введите ваше имя:') || 'Аноним';
+    localStorage.setItem('chat_username', username);
+  }
+
+  const messagesDiv = document.getElementById('messages');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('message-input');
+
+  window.editMessage = function(id, oldText) {
+    const decodedText = decodeURIComponent(oldText);
+    const newText = prompt("Редактировать сообщение:", decodedText);
+    
+    if (newText !== null && newText.trim() !== "") {
+      const msgRef = ref(db, 'messages/' + id);
+      update(msgRef, { 
+        text: newText.trim(),
+        edited: true 
+      });
+    }
+  };
+
+  window.deleteMessage = function(id) {
+    if (confirm("Удалить это сообщение?")) {
+      const msgRef = ref(db, 'messages/' + id);
+      remove(msgRef);
+    }
+  };
+
+  function buildMessageHTML(id, data) {
+    const isMy = data.author === username;
+    
+    const timestamp = data.timestamp ? data.timestamp : Date.now();
+    const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    const editedMark = data.edited ? '<span class="edited-mark">изменено</span>' : '';
+    const safeText = encodeURIComponent(data.text);
+
+    let controls = '';
+    if (isMy) {
+      controls = `
+        <div class="msg-controls">
+          <span onclick="editMessage('${id}', '${safeText}')" title="Редактировать">✏️</span>
+          <span onclick="deleteMessage('${id}')" title="Удалить">🗑️</span>
+        </div>
+      `;
+    }
+
+    return `
+      ${!isMy ? `<div class="message-author">${data.author}</div>` : ''}
+      <div class="message-text">${data.text}</div>
+      ${controls}
+      <div class="message-meta">
+        ${editedMark}
+        <span class="message-time">${timeString}</span>
+      </div>
+    `;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (text) {
+      push(messagesRef, { 
+        author: username, 
+        text: text,
+        timestamp: Date.now()
+      });
+      input.value = '';
+    }
+  });
+
+  onChildAdded(messagesRef, (snapshot) => {
+    const data = snapshot.val();
+    const id = snapshot.key;
+    const isMy = data.author === username;
+    
+    const msgEl = document.createElement('div');
+    msgEl.className = `message ${isMy ? 'my' : 'other'}`;
+    msgEl.id = `msg-${id}`; 
+    
+    msgEl.innerHTML = buildMessageHTML(id, data);
+    
+    messagesDiv.appendChild(msgEl);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
+
+  onChildChanged(messagesRef, (snapshot) => {
+    const data = snapshot.val();
+    const id = snapshot.key;
+    const msgEl = document.getElementById(`msg-${id}`);
+    
+    if (msgEl) {
+      msgEl.innerHTML = buildMessageHTML(id, data);
+    }
+  });
+
+  onChildRemoved(messagesRef, (snapshot) => {
+    const id = snapshot.key;
+    const msgEl = document.getElementById(`msg-${id}`);
+    
+    if (msgEl) {
+      msgEl.remove();
+    }
+  });
+</script>
+
+</body>
+</html>
