@@ -330,23 +330,23 @@
       background: rgba(0, 0, 0, 0.18);
     }
 
-    /* Всплывающее меню выбора реакций (в стиле Telegram) */
+    /* Всплывающее меню выбора реакций (с плавной упругой анимацией) */
     .reaction-picker {
       position: absolute;
       bottom: 105%;
       left: 50%;
-      transform: translateX(-50%) scale(0.8) translateY(10px);
+      transform: translateX(-50%) scale(0.7) translateY(12px);
       background: var(--header-bg);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-      border-radius: 28px;
-      padding: 6px 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      border-radius: 30px;
+      padding: 8px 14px;
       display: flex;
-      gap: 8px;
+      gap: 10px;
       z-index: 50;
       opacity: 0;
       pointer-events: none;
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
     }
 
     .reaction-picker.active {
@@ -356,13 +356,14 @@
     }
 
     .reaction-picker span {
-      font-size: 22px;
+      font-size: 24px;
       cursor: pointer;
-      transition: transform 0.15s ease;
+      display: inline-block;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .reaction-picker span:hover {
-      transform: scale(1.35);
+      transform: scale(1.4) translateY(-3px);
     }
 
     /* Анимация плавающего сердечка при двойном тапе */
@@ -767,10 +768,38 @@
 
   input.addEventListener('input', autoResizeTextarea);
 
+  // Обработка клавиатуры (Отправка по Enter и шорткод Ctrl + Стрелка вверх для ответа)
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       form.requestSubmit();
+      return;
+    }
+
+    // Шорткод Ctrl + Стрелка вверх для ответа на последнее сообщение (как в Telegram)
+    if (e.key === 'ArrowUp' && (e.ctrlKey || e.metaKey)) {
+      if (input.selectionStart === 0 && input.selectionEnd === 0) {
+        e.preventDefault();
+        
+        const messageElements = messagesDiv.querySelectorAll('.message');
+        if (messageElements.length > 0) {
+          const lastMsgEl = messageElements[messageElements.length - 1];
+          const lastMsgId = lastMsgEl.id.replace('msg-', '');
+          
+          const textEl = lastMsgEl.querySelector('.message-text');
+          const authorEl = lastMsgEl.querySelector('.message-author');
+          
+          let authorName = username;
+          if (authorEl) {
+            authorName = authorEl.textContent;
+          }
+          
+          if (textEl) {
+            const msgText = textEl.textContent;
+            window.replyMessage(lastMsgId, authorName, encodeURIComponent(msgText));
+          }
+        }
+      }
     }
   });
 
@@ -961,7 +990,6 @@
     messageToDeleteId = null;
   });
 
-  // Закрытие всех пикеров при клике в пустоту
   function closeAllPickers() {
     document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('active'));
   }
@@ -972,7 +1000,6 @@
     }
   });
 
-  // Открытие полноценного меню реакций (ПКМ или долгий тап)
   window.openReactionPicker = function(id, e) {
     e.preventDefault();
     closeAllPickers();
@@ -996,7 +1023,6 @@
     picker.classList.add('active');
   };
 
-  // Переключение конкретной реакции в базе
   window.toggleReaction = function(id, emoji) {
     const currentMsgRef = ref(db, `messages/${id}`);
     import("https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js").then(({ get }) => {
@@ -1025,7 +1051,6 @@
     });
   };
 
-  // Двойной тап / клик ставит быстрое сердечко
   window.handleMessageDblClick = function(id) {
     window.toggleReaction(id, '❤️');
     const msgEl = document.getElementById(`msg-${id}`);
@@ -1175,13 +1200,9 @@
     msgEl.id = `msg-${id}`; 
     msgEl.innerHTML = buildMessageHTML(id, data);
     
-    // Двойной клик / тап -> быстрое сердечко
     msgEl.addEventListener('dblclick', () => handleMessageDblClick(id));
-    
-    // ПКМ -> меню выбора реакций
     msgEl.addEventListener('contextmenu', (e) => openReactionPicker(id, e));
 
-    // Долгое нажатие для телефонов (эмуляция долгого тапа)
     let pressTimer;
     msgEl.addEventListener('touchstart', (e) => {
       pressTimer = setTimeout(() => {
