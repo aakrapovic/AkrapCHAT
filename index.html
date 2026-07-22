@@ -374,7 +374,6 @@
     let isTaken = false;
     snapshot.forEach((child) => {
       const data = child.val();
-      // Проверяем совпадение никнейма и что у этого сообщения другой userId
       if (data.author && data.author.toLowerCase() === candidateName.toLowerCase()) {
         if (data.userId && data.userId !== userId) {
           isTaken = true;
@@ -401,11 +400,9 @@
     enteredName = enteredName.trim();
     let oldUsername = username;
     
-    // Проверяем, занят ли этот ник ДРУГИМ устройством ДО того, как примем его локально
     const taken = await checkNameTaken(enteredName);
     
     if (taken && oldUsername !== enteredName) {
-      // Отправляем красивое системное уведомление в чат (исправлен текст: подставляем enteredName)
       push(messagesRef, {
         system: true,
         text: `⚠️ Внимание: пользователь ${enteredName} попытался занять этот ник, но данный ник уже занят!`
@@ -492,7 +489,7 @@
         text: text,
         timestamp: Date.now()
       });
-      input.value = false;
+      input.value = ''; // <--- Исправлено! Теперь поле чистое.
     }
   });
 
