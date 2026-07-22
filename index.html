@@ -105,8 +105,14 @@
       flex: 1;
     }
 
-    /* Кнопка смены темы */
-    .theme-toggle {
+    /* Кнопки действий в шапке (смена имени, тема) */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .action-btn {
       cursor: pointer;
       font-size: 20px;
       padding: 5px;
@@ -114,8 +120,9 @@
       user-select: none;
       transition: transform 0.2s;
     }
-    .theme-toggle:hover {
-      transform: scale(1.1);
+
+    .action-btn:hover {
+      transform: scale(1.15);
     }
 
     /* Список сообщений */
@@ -158,6 +165,19 @@
       align-self: flex-start; 
       background: var(--other-msg-bg); 
       border-bottom-left-radius: 4px; 
+    }
+
+    /* Системное уведомление / Надпись о занятом нике */
+    .message.system {
+      align-self: center;
+      background: rgba(127, 145, 164, 0.15);
+      color: var(--subtitle-color);
+      font-size: 13px;
+      text-align: center;
+      border-radius: 8px;
+      padding: 6px 14px;
+      max-width: 95%;
+      box-shadow: none;
     }
 
     /* Имя автора (только для чужих) */
@@ -278,8 +298,11 @@
     <div class="title-area">
       <div class="title">Новый чат</div>
     </div>
-    <!-- Тумблер темы -->
-    <div class="theme-toggle" id="theme-btn" title="Сменить тему">🌞</div>
+    <!-- Кнопки управления в шапке -->
+    <div class="header-actions">
+      <div class="action-btn" id="change-name-btn" title="Сменить имя">👤</div>
+      <div class="action-btn" id="theme-btn" title="Сменить тему">🌞</div>
+    </div>
   </div>
   
   <div class="messages-list" id="messages"></div>
@@ -296,7 +319,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   // Логика переключения тем
   const themeBtn = document.getElementById('theme-btn');
@@ -319,7 +342,7 @@
     }
   });
 
-  // Ваши ключи
+  // Ваши ключи Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyD5L07zQ8Tpx71b-ykrh4dqasX_4ypXpyc",
     authDomain: "akrapmsg.firebaseapp.com",
@@ -334,15 +357,83 @@
   const db = getDatabase(app);
   const messagesRef = ref(db, 'messages');
 
-  let username = localStorage.getItem('chat_username');
-  if (!username) {
-    username = prompt('Введите ваше имя:') || 'Аноним';
-    localStorage.setItem('chat_username', username);
-  }
-
   const messagesDiv = document.getElementById('messages');
   const form = document.getElementById('chat-form');
   const input = document.getElementById('message-input');
+  const changeNameBtn = document.getElementById('change-name-btn');
+
+  // Уникальный ID устройства для отслеживания владельца ника
+  let userId = localStorage.getItem('chat_user_id');
+  if (!userId) {
+    userId = 'usr_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    localStorage.setItem('chat_user_id', userId);
+  }
+
+  // Функция проверки: занято ли имя ДРУГИМ пользователем в истории чата
+  async function checkNameTaken(candidateName) {
+    const snapshot = await get(messagesRef);
+    if (!snapshot.exists()) return false;
+    
+    let isTaken = false;
+    snapshot.forEach((child) => {
+      const data = child.val();
+      if (data.author && data.author.toLowerCase() === candidateName.toLowerCase()) {
+        // Если имя использовалось кем-то, у кого другой userId
+        if (data.userId && data.userId !== userId) {
+          isTaken = true;
+        }
+      }
+    });
+    return isTaken;
+  }
+
+  // Логика инициализации и смены имени (без блокировки, но с отправкой системного сообщения)
+  let username = localStorage.getItem('chat_username');
+
+  async function promptForUsername(isChange = false) {
+    let promptMsg = isChange ? 'Введите новое имя:' : 'Введите ваше имя:';
+    let enteredName = prompt(promptMsg, username || '');
+
+    if (!enteredName || enteredName.trim() === '') {
+      if (!username) {
+        username = 'Аноним_' + Math.floor(Math.random() * 1000);
+        localStorage.setItem('chat_username', username);
+      }
+      return;
+    }
+
+    enteredName = enteredName.trim();
+    let oldUsername = username;
+    username = enteredName;
+    localStorage.setItem('chat_username', username);
+
+    // Проверяем, занят ли этот ник кем-то другим в базе
+    const taken = await checkNameTaken(username);
+    if (taken && oldUsername !== username) {
+      // Отправляем красивое системное сообщение в чат
+      push(messagesRef, {
+        system: true,
+        text: `⚠️ Внимание: пользователь ${username} попытался занять этот ник, но данный ник уже занят!`
+      });
+    }
+
+    if (isChange) {
+      location.reload();
+    }
+  }
+
+  if (!username) {
+    promptForUsername(false);
+  } else {
+    // При каждом перезаходе проверяем, не пытаемся ли мы использовать занятый ник
+    checkNameTaken(username).then((taken) => {
+      // Можно опционально проверять при старте, если нужно
+    });
+  }
+
+  changeNameBtn.addEventListener('click', () => {
+    promptForUsername(true);
+  });
 
   window.editMessage = function(id, oldText) {
     const decodedText = decodeURIComponent(oldText);
@@ -365,6 +456,12 @@
   };
 
   function buildMessageHTML(id, data) {
+    // Если это системное сообщение
+    if (data.system) {
+      return `<div class="message-text">${data.text}</div>`;
+    }
+
+    // Свободная смена имен: «моё» сообщение определяется по имени автора или userId
     const isMy = data.author === username;
     
     const timestamp = data.timestamp ? data.timestamp : Date.now();
@@ -394,12 +491,13 @@
     `;
   }
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = input.value.trim();
     if (text) {
       push(messagesRef, { 
         author: username, 
+        userId: userId,
         text: text,
         timestamp: Date.now()
       });
@@ -410,12 +508,17 @@
   onChildAdded(messagesRef, (snapshot) => {
     const data = snapshot.val();
     const id = snapshot.key;
-    const isMy = data.author === username;
     
     const msgEl = document.createElement('div');
-    msgEl.className = `message ${isMy ? 'my' : 'other'}`;
-    msgEl.id = `msg-${id}`; 
     
+    if (data.system) {
+      msgEl.className = 'message system';
+    } else {
+      const isMy = data.author === username;
+      msgEl.className = `message ${isMy ? 'my' : 'other'}`;
+    }
+    
+    msgEl.id = `msg-${id}`; 
     msgEl.innerHTML = buildMessageHTML(id, data);
     
     messagesDiv.appendChild(msgEl);
