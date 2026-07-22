@@ -619,9 +619,10 @@
   let activeReplyData = null;
   let activeEditData = null;
 
+  // Уникальный ID с защитой от совпадений в инкогнито/вкладках
   let userId = localStorage.getItem('chat_user_id');
   if (!userId) {
-    userId = 'usr_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    userId = 'usr_' + Math.random().toString(36).substring(2, 7) + '_' + Date.now();
     localStorage.setItem('chat_user_id', userId);
   }
 
