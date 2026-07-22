@@ -185,7 +185,7 @@
       display: flex; 
       align-items: center;
       justify-content: flex-end;
-      gap: 6px;
+      gap: 5px;
       font-size: 11px; 
       margin-top: 2px;
     }
@@ -195,6 +195,21 @@
 
     .edited-mark {
       font-style: italic;
+    }
+
+    /* Стили для иконок галочек */
+    .status-ticks {
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+      width: 16px;
+      height: 12px;
+    }
+
+    .status-ticks svg {
+      width: 16px;
+      height: 12px;
+      fill: currentColor;
     }
 
     /* Панель управления (кнопки ред/уд) при наведении */
@@ -306,7 +321,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  // Логика переключения тем
   const themeBtn = document.getElementById('theme-btn');
   let currentTheme = localStorage.getItem('chat_theme') || 'dark';
   
@@ -346,7 +360,6 @@
   const input = document.getElementById('message-input');
   const changeNameBtn = document.getElementById('change-name-btn');
 
-  // Уникальный ID устройства
   let userId = localStorage.getItem('chat_user_id');
   if (!userId) {
     userId = 'usr_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
@@ -422,6 +435,36 @@
       `;
     }
 
+    // Иконки галочек как на фото (1 галочка или 2 смещенные галочки)
+    let ticksIcon = '';
+    if (isMy) {
+      if (data.read) {
+        // Две галочки (прочитано)
+        ticksIcon = `
+          <span class="status-ticks" title="Прочитано">
+            <svg viewBox="0 0 16 11">
+              <path d="M11.07 0.93L5.5 6.5L3.43 4.43L2 5.86L5.5 9.36L12.5 2.36L11.07 0.93ZM14.07 0.93L13.36 1.64L14.79 3.07L15.5 2.36L14.07 0.93ZM12.64 3.79L5.5 10.93L4.07 9.5L11.21 2.36L12.64 3.79Z"/>
+            </svg>
+          </span>
+        `;
+      } else {
+        // Одна галочка (не прочитано)
+        ticksIcon = `
+          <span class="status-ticks" title="Доставлено">
+            <svg viewBox="0 0 16 11">
+              <path d="M5.5 9.36L2 5.86L3.43 4.43L5.5 6.5L12.5 0.93L13.93 2.36L5.5 9.36Z"/>
+            </svg>
+          </span>
+        `;
+      }
+    }
+
+    // Если сообщение чужое и оно еще не прочитано, отмечаем его прочитанным
+    if (!isMy && !data.read) {
+      const msgRef = ref(db, 'messages/' + id);
+      update(msgRef, { read: true });
+    }
+
     return `
       ${!isMy ? `<div class="message-author">${data.author}</div>` : ''}
       <div class="message-text">${data.text}</div>
@@ -429,6 +472,7 @@
       <div class="message-meta">
         ${editedMark}
         <span class="message-time">${timeString}</span>
+        ${ticksIcon}
       </div>
     `;
   }
@@ -441,7 +485,8 @@
         author: username, 
         userId: userId,
         text: text,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        read: false
       });
       input.value = '';
     }
