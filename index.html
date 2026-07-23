@@ -230,7 +230,16 @@
       font-size: 13px; 
       color: var(--author-color); 
       font-weight: 600; 
-      margin-bottom: 2px; 
+      margin-bottom: 2px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .message-username {
+      font-size: 11px;
+      font-weight: normal;
+      color: var(--subtitle-color);
     }
 
     .message-reply {
@@ -570,7 +579,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -590,7 +599,7 @@
       width: 85%;
       max-width: 320px;
       border-radius: 14px;
-      padding: 20px 20px 10px 20px;
+      padding: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
       color: var(--text-color);
       transform: scale(0.9);
@@ -623,7 +632,7 @@
       color: var(--text-color);
       font-size: 15px;
       outline: none;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       transition: border-color 0.2s ease;
     }
 
@@ -635,7 +644,6 @@
       display: flex;
       justify-content: flex-end;
       gap: 8px;
-      margin-bottom: 5px;
     }
 
     .modal-btn {
@@ -658,6 +666,86 @@
 
     .modal-btn.danger {
       color: var(--danger-color);
+    }
+
+    /* Telegram-стиль для окна авторизации */
+    .tg-auth-box {
+      background: var(--header-bg);
+      border-radius: 16px;
+      padding: 30px 24px 24px 24px;
+      text-align: center;
+      max-width: 360px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tg-logo {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .tg-auth-box .modal-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-color);
+    }
+
+    .tg-auth-box .modal-desc {
+      font-size: 14px;
+      color: var(--subtitle-color);
+      margin-bottom: 20px;
+    }
+
+    .tg-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tg-auth-box .modal-input {
+      background: var(--input-bg);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      color: var(--text-color);
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      margin-bottom: 0;
+    }
+
+    .tg-auth-box .modal-input:focus {
+      border-color: var(--author-color);
+    }
+
+    .tg-primary-btn {
+      background: var(--author-color) !important;
+      color: white !important;
+      border-radius: 10px !important;
+      padding: 12px !important;
+      font-size: 15px !important;
+      font-weight: 650;
+      text-transform: none !important;
+      width: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    .tg-primary-btn:hover {
+      opacity: 0.9;
+    }
+
+    .tg-switch-btn {
+      background: transparent !important;
+      color: var(--author-color) !important;
+      font-size: 14px !important;
+      text-transform: none !important;
+      font-weight: 500;
+      width: 100%;
+    }
+
+    .tg-switch-btn:hover {
+      background: var(--modal-btn-hover) !important;
     }
 
     .chat-input-wrapper {
@@ -843,26 +931,33 @@
   <div class="chat-header">
     <div class="avatar">💬</div>
     <div class="title-area">
-      <div class="title" id="header-title">Новый чат</div>
+      <div class="title" id="header-title">AkrapCHAT</div>
       <div class="subtitle" id="header-subtitle">печатает...</div>
     </div>
     <div class="header-actions">
-      <div class="action-btn" id="change-name-btn" title="Сменить имя">👤</div>
       <div class="action-btn" id="theme-btn" title="Сменить тему">🌞</div>
     </div>
   </div>
   
   <div class="messages-list" id="messages"></div>
 
-  <!-- Модальное окно ввода имени -->
-  <div class="modal-overlay" id="name-modal">
-    <div class="modal-box">
-      <div class="modal-title" id="name-modal-title">Ваше имя</div>
-      <div class="modal-desc" id="name-modal-desc">Введите ваше имя для участия в чате:</div>
-      <input type="text" class="modal-input" id="name-modal-input" autocomplete="off">
-      <div class="modal-buttons">
-        <button class="modal-btn" id="name-modal-cancel">Отмена</button>
-        <button class="modal-btn" id="name-modal-confirm">Продолжить</button>
+  <!-- Модальное окно авторизации в стиле Telegram (с полями для Имени и Юзернейма) -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-box tg-auth-box">
+      <div class="tg-logo">💬</div>
+      <div class="modal-title" id="auth-modal-title">AkrapCHAT</div>
+      <div class="modal-desc" id="auth-modal-desc">Введите логин и пароль для входа</div>
+      
+      <div class="tg-input-group">
+        <input type="text" class="modal-input" id="auth-login" placeholder="Логин (для входа, например ivan)" autocomplete="username">
+        <input type="password" class="modal-input" id="auth-password" placeholder="Пароль" autocomplete="current-password">
+        <input type="text" class="modal-input" id="auth-name" placeholder="Ваше имя (например, Иван)" style="display:none;" autocomplete="name">
+        <input type="text" class="modal-input" id="auth-username" placeholder="Юзернейм (например, @ivan_chat)" style="display:none;" autocomplete="nickname">
+      </div>
+
+      <div class="modal-buttons" style="flex-direction: column; gap: 10px; margin-top: 15px;">
+        <button class="modal-btn tg-primary-btn" id="auth-submit-btn">Продолжить</button>
+        <button class="modal-btn tg-switch-btn" id="auth-switch-btn">Создать аккаунт</button>
       </div>
     </div>
   </div>
@@ -926,6 +1021,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const themeBtn = document.getElementById('theme-btn');
   let currentTheme = localStorage.getItem('chat_theme') || 'dark';
@@ -959,13 +1055,14 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  const auth = getAuth(app);
+
   const messagesRef = ref(db, 'messages');
   const typingRef = ref(db, 'typing');
 
   const messagesDiv = document.getElementById('messages');
   const form = document.getElementById('chat-form');
   const input = document.getElementById('message-input');
-  const changeNameBtn = document.getElementById('change-name-btn');
   const headerTitle = document.getElementById('header-title');
   const headerSubtitle = document.getElementById('header-subtitle');
   
@@ -973,6 +1070,145 @@
   const emojiMenu = document.getElementById('emoji-menu');
   const emojiGrid = document.getElementById('emoji-grid');
   const emojiTabs = document.getElementById('emoji-tabs');
+
+  // Авторизация
+  const authModal = document.getElementById('auth-modal');
+  const authLoginInput = document.getElementById('auth-login');
+  const authPasswordInput = document.getElementById('auth-password');
+  const authNameInput = document.getElementById('auth-name');
+  const authUsernameInput = document.getElementById('auth-username');
+  const authSubmitBtn = document.getElementById('auth-submit-btn');
+  const authSwitchBtn = document.getElementById('auth-switch-btn');
+  
+  let isRegisterMode = false;
+  let userId = null;
+  let username = null;
+  let userHandle = null;
+
+  authSwitchBtn.addEventListener('click', () => {
+    isRegisterMode = !isRegisterMode;
+    if (isRegisterMode) {
+      document.getElementById('auth-modal-title').textContent = 'Регистрация';
+      document.getElementById('auth-modal-desc').textContent = 'Заполните данные для создания профиля';
+      authNameInput.style.display = 'block';
+      authUsernameInput.style.display = 'block';
+      authSubmitBtn.textContent = 'Зарегистрироваться';
+      authSwitchBtn.textContent = 'Уже есть аккаунт? Войти';
+    } else {
+      document.getElementById('auth-modal-title').textContent = 'AkrapCHAT';
+      document.getElementById('auth-modal-desc').textContent = 'Введите логин и пароль для входа';
+      authNameInput.style.display = 'none';
+      authUsernameInput.style.display = 'none';
+      authSubmitBtn.textContent = 'Продолжить';
+      authSwitchBtn.textContent = 'Создать аккаунт';
+    }
+    authLoginInput.value = '';
+    authPasswordInput.value = '';
+    authNameInput.value = '';
+    authUsernameInput.value = '';
+    authLoginInput.focus();
+  });
+
+  authSubmitBtn.addEventListener('click', () => {
+    let login = authLoginInput.value.trim().toLowerCase();
+    const password = authPasswordInput.value.trim();
+    const name = authNameInput.value.trim();
+    let handle = authUsernameInput.value.trim();
+
+    if (!login || !password) {
+      alert('Заполните логин и пароль!');
+      return;
+    }
+
+    const fakeEmail = `${login}@akrapchat.internal`;
+
+    if (isRegisterMode) {
+      if (!name) {
+        alert('Введите отображаемое имя!');
+        return;
+      }
+      if (!handle) {
+        alert('Введите юзернейм!');
+        return;
+      }
+      if (!handle.startsWith('@')) {
+        handle = '@' + handle;
+      }
+      if (login.length < 3) {
+        alert('Логин должен содержать не менее 3 символов!');
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, fakeEmail, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          set(ref(db, 'users/' + user.uid), { 
+            name: name,
+            username: handle,
+            login: login 
+          });
+          username = name;
+          userHandle = handle;
+          userId = user.uid;
+          authModal.classList.remove('active');
+        })
+        .catch((error) => {
+          if (error.code === 'auth/email-already-in-use') {
+            alert('Этот логин уже занят другим пользователем!');
+          } else {
+            alert('Ошибка регистрации: ' + error.message);
+          }
+        });
+    } else {
+      signInWithEmailAndPassword(auth, fakeEmail, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          userId = user.uid;
+          onValue(ref(db, 'users/' + user.uid), (snapshot) => {
+            if (snapshot.exists()) {
+              username = snapshot.val().name;
+              userHandle = snapshot.val().username || ('@' + login);
+            } else {
+              username = login;
+              userHandle = '@' + login;
+            }
+            authModal.classList.remove('active');
+          }, { onlyOnce: true });
+        })
+        .catch((error) => {
+          alert('Неверный логин или пароль!');
+        });
+    }
+  });
+
+  [authLoginInput, authPasswordInput, authNameInput, authUsernameInput].forEach(element => {
+    element.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        authSubmitBtn.click();
+      }
+    });
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      userId = user.uid;
+      onValue(ref(db, 'users/' + user.uid), (snapshot) => {
+        if (snapshot.exists()) {
+          username = snapshot.val().name;
+          userHandle = snapshot.val().username || '';
+        } else {
+          username = "Пользователь";
+          userHandle = '';
+        }
+        authModal.classList.remove('active');
+      }, { onlyOnce: true });
+    } else {
+      userId = null;
+      username = null;
+      userHandle = null;
+      authModal.classList.add('active');
+    }
+  });
 
   const emojiCategories = {
     smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
@@ -1043,28 +1279,6 @@
     }
   });
 
-  function openNameModal(isChange = false) {
-    isNameChangeMode = isChange;
-    nameModalTitle.textContent = isChange ? 'Изменение имени' : 'Ваше имя';
-    nameModalDesc.textContent = isChange ? 'Введите новое имя:' : 'Введите ваше имя для участия в чате:';
-    nameModalInput.value = username || '';
-    nameModalCancel.style.display = isChange ? 'block' : 'none';
-    nameModal.classList.add('active');
-    setTimeout(() => nameModalInput.focus(), 100);
-  }
-
-  function closeNameModal() {
-    nameModal.classList.remove('active');
-  }
-
-  const nameModal = document.getElementById('name-modal');
-  const nameModalTitle = document.getElementById('name-modal-title');
-  const nameModalDesc = document.getElementById('name-modal-desc');
-  const nameModalInput = document.getElementById('name-modal-input');
-  const nameModalCancel = document.getElementById('name-modal-cancel');
-  const nameModalConfirm = document.getElementById('name-modal-confirm');
-  let isNameChangeMode = false;
-
   const deleteModal = document.getElementById('delete-modal');
   const modalCancelBtn = document.getElementById('modal-cancel');
   const modalConfirmBtn = document.getElementById('modal-confirm');
@@ -1073,45 +1287,12 @@
   let activeReplyData = null;
   let activeEditData = null;
 
-  let userId = 'usr_' + Math.random().toString(36).substring(2, 7) + '_' + Date.now();
-  let username = localStorage.getItem('chat_username');
-
-  nameModalConfirm.addEventListener('click', () => {
-    let enteredName = nameModalInput.value.trim();
-    if (!enteredName) return;
-
-    username = enteredName;
-    localStorage.setItem('chat_username', username);
-    closeNameModal();
-
-    if (isNameChangeMode) {
-      location.reload();
-    }
-  });
-
-  nameModalInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      nameModalConfirm.click();
-    }
-  });
-
-  nameModalCancel.addEventListener('click', () => {
-    closeNameModal();
-  });
-
-  if (!username) {
-    openNameModal(false);
-  }
-
-  changeNameBtn.addEventListener('click', () => {
-    openNameModal(true);
-  });
-
   const myTypingRef = ref(db, 'typing/' + userId);
   let typingTimeout = null;
   let isCurrentlyTyping = false;
 
   input.addEventListener('input', () => {
+    if (!userId) return;
     const text = input.value.trim();
     if (text.length > 0) {
       if (!isCurrentlyTyping) {
@@ -1270,7 +1451,6 @@
     }
   });
 
-  // ПОЗИЦИОНИРОВАНИЕ РЕАКЦИЙ
   window.openReactionPicker = function(id, e) {
     e.preventDefault();
     closeAllPickers();
@@ -1285,7 +1465,7 @@
       
       const quickDiv = document.createElement('div');
       quickDiv.className = 'quick-emojis';
-      const quickEmojis = ['❤️', '👍', '😇', '🥰', '🤔', '😡', '😢'];
+      const quickEmojis = ['❤️', '😇', '🤔', '👍', '😡', '🥰', '😢'];
       quickEmojis.forEach(emoji => {
         const span = document.createElement('span');
         span.textContent = emoji;
@@ -1334,7 +1514,6 @@
 
     picker.classList.add('active');
 
-    // Центрирование относительно сообщения с защитой от вылета за границы чата
     requestAnimationFrame(() => {
       const pickerRect = picker.getBoundingClientRect();
       const chatRect = chatContainer.getBoundingClientRect();
@@ -1468,8 +1647,10 @@
       reactionsHTML += '</div>';
     }
 
+    const handleDisplay = data.userHandle ? `<span class="message-username">${data.userHandle}</span>` : '';
+
     return `
-      ${!isMy ? `<div class="message-author">${data.author}</div>` : ''}
+      ${!isMy ? `<div class="message-author">${data.author} ${handleDisplay}</div>` : ''}
       ${replyHTML}
       <div class="message-text">${data.text}</div>
       ${reactionsHTML}
@@ -1500,6 +1681,7 @@
       const newMessageData = { 
         author: username, 
         userId: userId,
+        userHandle: userHandle || '',
         text: text,
         timestamp: Date.now(),
         read: false
