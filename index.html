@@ -1043,15 +1043,16 @@
     }
   });
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyD5L07zQ8Tpx71b-ykrh4dqasX_4ypXpyc",
-    authDomain: "akrapmsg.firebaseapp.com",
-    databaseURL: "https://akrapmsg-default-rtdb.firebaseio.com",
-    projectId: "akrapmsg",
-    storageBucket: "akrapmsg.firebasestorage.app",
-    messagingSenderId: "526501884029",
-    appId: "1:526501884029:web:3c26d1ba0b519eb78d0114"
-  };
+  // Настройка подключения к Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyD5LO7zQ8Tpx71b-ykrh4dqasX_4ypXpyc",
+  authDomain: "akrapmsg.firebaseapp.com",
+  databaseURL: "https://akrapmsg-default-rtdb.firebaseio.com",
+  projectId: "akrapmsg",
+  storageBucket: "akrapmsg.firebasestorage.app",
+  messagingSenderId: "526501884029",
+  appId: "1:526501884029:web:3c26d1ba0b519eb78d0114"
+};
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
