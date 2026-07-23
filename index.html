@@ -223,22 +223,7 @@
       width: 100%; height: 100%; object-fit: cover;
     }
     .chat-item-info { flex: 1; overflow: hidden; }
-    .chat-item-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-    .chat-item-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    
-    /* Индикатор непрочитанных сообщений в стиле Telegram */
-    .unread-badge {
-      background-color: var(--telegram-blue);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 10px;
-      min-width: 18px;
-      text-align: center;
-      display: inline-block;
-      flex-shrink: 0;
-    }
+    .chat-item-title { font-weight: 600; font-size: 15px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-item-subtitle { font-size: 13px; color: var(--subtitle-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .sidebar-overlay {
@@ -885,11 +870,6 @@
     </div>
 
     <form class="chat-input" id="chat-form">
-      <button type="button" class="input-icon-btn" id="attachment-btn" title="Прикрепить медиафайл">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-        </svg>
-      </button>
       <textarea id="message-input" placeholder="Сообщение..." rows="1" required autocomplete="off" disabled></textarea>
       <button type="button" class="input-icon-btn" id="emoji-btn" title="Выбрать эмодзи">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -910,7 +890,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, get, onValue, onDisconnect, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, get, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   function showTgToast(message) {
@@ -920,6 +900,7 @@
     setTimeout(() => { toast.classList.remove('active'); }, 2500);
   }
 
+  // Функция для сжатия изображения перед конвертацией в base64 (чтобы не забивать лимиты Realtime Database)
   function compressImage(file, maxWidth = 200, maxHeight = 200, quality = 0.7) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -1000,6 +981,7 @@
   const headerAvatarLetter = document.getElementById('header-avatar-letter');
   const headerStatusDot = document.getElementById('header-status-dot');
   
+  // Элементы профиля пользователя (Telegram style)
   const profileModal = document.getElementById('profile-modal');
   const openProfileBtn = document.getElementById('open-profile-btn');
   const openProfileTextBtn = document.getElementById('open-profile-text-btn');
@@ -1038,6 +1020,7 @@
     profileModal.classList.remove('active');
   });
 
+  // Логика удаления чата (у обоих пользователей)
   deleteChatBtn.addEventListener('click', () => {
     if (!currentPartner || !currentChatId) return;
     deleteChatDesc.innerHTML = `История сообщений с пользователем <strong>${currentPartner.name}</strong> будет удалена для обоих пользователей.`;
@@ -1123,11 +1106,6 @@
   const emojiMenu = document.getElementById('emoji-menu');
   const emojiGrid = document.getElementById('emoji-grid');
   const emojiTabs = document.getElementById('emoji-tabs');
-  const attachmentBtn = document.getElementById('attachment-btn');
-
-  attachmentBtn.addEventListener('click', () => {
-    showTgToast('Выбор медиафайлов');
-  });
 
   const menuBtn = document.getElementById('menu-btn');
   const sidebar = document.getElementById('sidebar');
@@ -1233,7 +1211,7 @@
   let userId = null; let username = null; let userHandle = null; let userBio = null; let userAvatarUrl = null;
   let currentChatId = null; let currentPartner = null;
   let partnerStatusUnsubscribe = null;
-  let newAvatarBase64 = null;
+  let newAvatarBase64 = null; // Временное хранение аватара перед сохранением
 
   authSwitchBtn.addEventListener('click', () => {
     isRegisterMode = !isRegisterMode;
@@ -1305,7 +1283,7 @@
         } else {
           username = "Пользователь"; userHandle = ''; userBio = ''; userAvatarUrl = '';
         }
-        initUserSession();
+        initUserSession(); authModal.classList.add('active'); // исправлено отображение
         authModal.classList.remove('active'); setupPresence();
       });
     } else {
@@ -1359,6 +1337,7 @@
     sidebarHandle.textContent = userHandle;
     sidebarBio.textContent = userBio ? `О себе: ${userBio}` : 'О себе не указано';
     
+    // Рендер аватарки в боковой панели
     if (userAvatarUrl) {
       sidebarAvatarContainer.innerHTML = `<img src="${userAvatarUrl}" alt="Avatar">`;
     } else {
@@ -1382,7 +1361,7 @@
     settingsNameInput.value = username || ''; 
     settingsUsernameInput.value = userHandle || ''; 
     settingsBioInput.value = userBio || '';
-    newAvatarBase64 = null;
+    newAvatarBase64 = null; // Сбрасываем при открытии
 
     if (userAvatarUrl) {
       settingsAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -1395,6 +1374,7 @@
 
   settingsCancelBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
 
+  // Обработка выбора файла аватара в настройках
   settingsAvatarInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1499,19 +1479,13 @@
           ? `<img src="${chatData.partnerAvatar}" style="width:100%; height:100%; object-fit:cover;">` 
           : (chatData.partnerName ? chatData.partnerName[0].toUpperCase() : '💬');
 
-        const unreadCount = chatData.unreadCount || 0;
-        const badgeHtml = unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : '';
-
         item.innerHTML = `
           <div class="avatar-wrapper">
             <div class="avatar">${avatarContent}</div>
             <div class="status-indicator" id="chat-item-dot-${chatData.partnerId}"></div>
           </div>
           <div class="chat-item-info">
-            <div class="chat-item-row">
-              <div class="chat-item-title">${chatData.partnerName}</div>
-              ${badgeHtml}
-            </div>
+            <div class="chat-item-title">${chatData.partnerName}</div>
             <div class="chat-item-subtitle">${chatData.partnerHandle || ''}</div>
           </div>`;
         
@@ -1545,34 +1519,9 @@
       const ids = [userId, partner.uid].sort(); currentChatId = ids[0] + '_' + ids[1];
     } else { currentChatId = existingChatId; }
 
-    set(ref(db, `user_chats/${userId}/${currentChatId}`), { 
-      partnerId: partner.uid, 
-      partnerName: partner.name, 
-      partnerHandle: partner.username, 
-      partnerAvatar: partner.avatarUrl || '',
-      unreadCount: 0 
-    });
-    set(ref(db, `user_chats/${partner.uid}/${currentChatId}`), { 
-      partnerId: userId, 
-      partnerName: username, 
-      partnerHandle: userHandle, 
-      partnerAvatar: userAvatarUrl || '' 
-    });
-
-    get(ref(db, `chats/${currentChatId}/messages`)).then((snapshot) => {
-      if (snapshot.exists()) {
-        const updates = {};
-        snapshot.forEach((childSnap) => {
-          const msg = childSnap.val();
-          if (msg.senderId !== userId && !msg.read) {
-            updates[`chats/${currentChatId}/messages/${childSnap.key}/read`] = true;
-          }
-        });
-        if (Object.keys(updates).length > 0) {
-          update(ref(db), updates);
-        }
-      }
-    });
+    // Сохраняем актуальные данные чатов с учетом аватарок
+    set(ref(db, `user_chats/${userId}/${currentChatId}`), { partnerId: partner.uid, partnerName: partner.name, partnerHandle: partner.username, partnerAvatar: partner.avatarUrl || '' });
+    set(ref(db, `user_chats/${partner.uid}/${currentChatId}`), { partnerId: userId, partnerName: username, partnerHandle: userHandle, partnerAvatar: userAvatarUrl || '' });
 
     headerTitle.textContent = partner.name;
     
@@ -1642,22 +1591,307 @@
         headerSubtitle.classList.add('active');
       }
     });
-
-    partnerStatusUnsubscribe = () => {};
+    
+    partnerStatusUnsubscribe = () => {
+      listener();
+    };
   }
 
-  let typingTimeout = null;
-  const typingRef = ref(db, 'typing/');
+  function loadMessagesForChat(chatId) {
+    messagesDiv.innerHTML = '';
+    const chatMessagesRef = ref(db, `chats/${chatId}/messages`);
+    onChildAdded(chatMessagesRef, (snapshot) => {
+      const data = snapshot.val(); const id = snapshot.key;
+      const msgEl = document.createElement('div'); const isMy = data.userId === userId;
+      msgEl.className = `message ${isMy ? 'my' : 'other'}`; msgEl.id = `msg-${id}`; 
+      msgEl.innerHTML = buildMessageHTML(chatId, id, data);
+      msgEl.addEventListener('dblclick', () => handleMessageDblClick(chatId, id));
+      msgEl.addEventListener('contextmenu', (e) => openReactionPicker(chatId, id, e));
+      let pressTimer;
+      msgEl.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { openReactionPicker(chatId, id, e); }, 500); });
+      msgEl.addEventListener('touchend', () => clearTimeout(pressTimer));
+      msgEl.addEventListener('touchmove', () => clearTimeout(pressTimer));
+      messagesDiv.appendChild(msgEl); messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+    onChildChanged(chatMessagesRef, (snapshot) => {
+      const data = snapshot.val(); const id = snapshot.key;
+      const msgEl = document.getElementById(`msg-${id}`);
+      if (msgEl) msgEl.innerHTML = buildMessageHTML(chatId, id, data);
+    });
+    onChildRemoved(chatMessagesRef, (snapshot) => {
+      const id = snapshot.key; const msgEl = document.getElementById(`msg-${id}`);
+      if (msgEl) {
+        if (!msgEl.classList.contains('removing')) { msgEl.classList.add('removing'); setTimeout(() => msgEl.remove(), 280); }
+        else { msgEl.remove(); }
+      }
+    });
+  }
+
+  const emojiCategories = {
+    smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+    gestures: ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','👣','👂','🦻','👀','👁️','💋','🩸'],
+    hearts: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌'],
+    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐗','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🕸️','🐢','🐍','🐙','🦑','🦐','🦞','🪸','🐳','🐋','🐬','🦭','🐟','🐠','🐡','🦈','🐊','🐪','🐘','🦣','🦏','🦛','🐪','🐫','🦘','🦡','🐾','🐩','🦮','🐕‍🦺','🐈‍⬛','🐈','🐇','🦝','🦨','🦡','🦥','🐁','🐀','🐿️','🦔','🐉','🐲'],
+    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🌮','🌯','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🍷','🍸','🍹','🍾','🥃','🧊','🥢','🍽️','🍴','🥄','🔪','🏺'],
+    activities: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🎫','🎟️','🎪','🤹','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩'],
+    objects: ['💡','🔦','🕯️','🪔','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','🪞','🪟','🛏️','🛋️','🚽','🪠','🚿','🛁','🪥','🪒','🧽','🪣','🧴','🛎️','🔑','🗝️','🚪','🪑','🛍️','🛒','🎁','🎈','🎏','🎀','🪄','🪅','🎊','🎉','🪩','🎐','🔮','🧿','🪬','📜','📄','🔖','📊','📈','📉','📇','🗃️','🗳️','🗄️','📋','📁','📂','🗂️','🗞️','📰','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🧷','🔗','📎','🖇️','📐','📏','🧮','📌','📍','✂️','🖊️','🖋️','✒️','🖌️','🖍️','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓','🔧','🛞','🔨','⚒️','🛠️','⛏️','🪓','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','🧪','🧫','🧬','🔬','🔭','📡','💉','🩸','💊','🩹','🩺'],
+    travel: ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🦽','🦼','🚝','🚞','🚟','🚢','⛵','🚤','🛥️','🛳️','⛴️','🛳️','✈️','🛩️','🛫','🛬','🪂','💺','🚁','🚟','🛰️','🚀','🛸','🛰️','🚂','🚃','🚄','🚅','🚆','🚇','🚊','🚉','🚁','🛵','🛺','⚓','🚧','⛽','🛞','🧳','⌛','⏳','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛️','⛪','🕌','🛕','🕍','⛩️','🕋','🌁','🌃','🏙️','🌄','🌅','🌆','🌇','🌉','♨️','🌌','🌠','🎇','🎆','🌇'],
+    symbols: ['💯','💢','💬','👁️‍🗨️','🗯️','💭','💤','🕳️','👓','🕶️','🥽','🥼','🦺','👔','👕','👖','🧣','🧤','🧥','🧦','👗','👘','🥻','🩱','🩲','3','👙','👚','👛','👜','👝','🎒','🧳','💼','👞','👟','🥾','🥿','👠','👡','👢','👑','👒','🎩','🎓','🧢','⛑️','📿','💄','💍','💎','🔇','🔈','🔉','🔊','📢','📣','📯','🔔','🔕','🎼','🎵','🎶','🎙️','🎚️','🎛️','🎤','🎧','📻','🎷','🪗','🎸','🎹','🎺','🎻','🪕','🥁','🪘','📱','📲','☎️','📞','📟','📠','🔋','🔌','💻','🖥️','🖨️','⌨️','🖱️','🖲️','💽','💾','💿','📀','🧮','🎥','🎞️','📽️','🎬','📺','📷','📸','📹','📼','🔍','🔎','🕯️','💡','🔦','🏮','🪔','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🧷','🔗','📎','🖇️','📐','📏','🧮','📌','📍','✂️','🖊️','🖋️','✒️','🖌️','🖍️','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓']
+  };
+
+  function renderEmojis(categoryKey) {
+    emojiGrid.innerHTML = '';
+    const emojis = emojiCategories[categoryKey] || [];
+    emojis.forEach(emoji => {
+      const span = document.createElement('span'); span.textContent = emoji;
+      span.onclick = () => {
+        const start = input.selectionStart; const end = input.selectionEnd; const text = input.value;
+        input.value = text.substring(0, start) + emoji + text.substring(end);
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        autoResizeTextarea(); input.focus();
+      };
+      emojiGrid.appendChild(span);
+    });
+  }
+
+  renderEmojis('smileys');
+  emojiTabs.querySelectorAll('span').forEach(tab => {
+    tab.addEventListener('click', () => {
+      emojiTabs.querySelectorAll('span').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active'); renderEmojis(tab.getAttribute('data-category'));
+    });
+  });
+
+  emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiMenu.classList.toggle('active'); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.emoji-picker-menu') && !e.target.closest('#emoji-btn')) emojiMenu.classList.remove('active'); });
+
+  function autoResizeTextarea() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
+  input.addEventListener('input', autoResizeTextarea);
+  
+  input.addEventListener('keydown', (e) => { 
+    if (e.key === 'Enter' && !e.shiftKey) { 
+      e.preventDefault(); 
+      form.requestSubmit();
+    } 
+  });
+
+  const deleteModal = document.getElementById('delete-modal');
+  const modalCancelBtn = document.getElementById('modal-cancel');
+  const modalConfirmBtn = document.getElementById('modal-confirm');
+  let messageToDeleteId = null; let activeReplyData = null; let activeEditData = null;
+  let typingTimeout = null; let isCurrentlyTyping = false;
 
   input.addEventListener('input', () => {
-    if (!currentChatId || !userId) return;
-    set(ref(db, `typing/${currentChatId}/${userId}`), true);
-    
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      set(ref(db, `typing/${currentChatId}/${userId}`), null);
-    }, 2000);
+    if (!userId || !currentChatId) return;
+    const myTypingRef = ref(db, `chats/${currentChatId}/typing/${userId}`);
+    const text = input.value.trim();
+    if (text.length > 0) {
+      if (!isCurrentlyTyping) { isCurrentlyTyping = true; set(myTypingRef, { name: username, isTyping: true }); onDisconnect(myTypingRef).remove(); }
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => { isCurrentlyTyping = false; remove(myTypingRef); }, 3000);
+    } else {
+      isCurrentlyTyping = false; remove(myTypingRef); clearTimeout(typingTimeout);
+    }
   });
+
+  function watchTyping(chatId) {
+    onValue(ref(db, `chats/${chatId}/typing`), (snapshot) => {
+      if (currentChatId !== chatId) return;
+      const data = snapshot.val() || {}; let isTyping = false;
+      for (let id in data) { if (id !== userId && data[id].isTyping) { isTyping = true; break; } }
+      if (isTyping) {
+        headerStatusDot.classList.remove('online');
+        headerTitle.style.display = 'none'; headerBio.style.display = 'none'; headerSubtitle.classList.add('active'); headerSubtitle.textContent = 'печатает...';
+      } else {
+        headerTitle.style.display = 'block'; 
+        if (currentPartner) {
+          get(ref(db, `status/${currentPartner.uid}`)).then((snap) => {
+            if (snap.exists()) {
+              const sVal = snap.val();
+              if (sVal.state === 'online') {
+                headerStatusDot.classList.add('online');
+                headerSubtitle.textContent = 'в сети';
+              } else {
+                headerStatusDot.classList.remove('online');
+                headerSubtitle.textContent = formatLastSeen(sVal.lastChanged);
+              }
+              headerSubtitle.classList.add('active');
+            }
+          });
+        }
+      }
+    });
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || !userId || !currentChatId) return;
+
+    if (activeEditData) {
+      update(ref(db, `chats/${currentChatId}/messages/${activeEditData}`), { text: text, edited: true });
+      cancelActiveMode();
+    } else {
+      const msgData = {
+        userId: userId,
+        author: username,
+        text: text,
+        timestamp: serverTimestamp()
+      };
+      if (activeReplyData) {
+        msgData.replyTo = { id: activeReplyData.id, author: activeReplyData.author, text: activeReplyData.text };
+      }
+      push(ref(db, `chats/${currentChatId}/messages`), msgData);
+      cancelActiveMode();
+    }
+    input.value = '';
+    autoResizeTextarea();
+  });
+
+  window.copyMessage = function(element, text) {
+    const decodedText = decodeURIComponent(text);
+    navigator.clipboard.writeText(decodedText).then(() => {
+      const originalHTML = element.innerHTML; element.innerHTML = '✔️'; setTimeout(() => { element.innerHTML = originalHTML; }, 1200);
+    });
+  };
+
+  window.replyMessage = function(id, author, text) {
+    cancelActiveMode(); const decodedText = decodeURIComponent(text); activeReplyData = { id, author, text: decodedText };
+    const actionBarLine = document.getElementById('action-bar-line'); const actionBarTitle = document.getElementById('action-bar-title'); const actionBarText = document.getElementById('action-bar-text'); const actionBar = document.getElementById('action-bar');
+    actionBarLine.style.background = 'var(--author-color)'; actionBarTitle.textContent = author; actionBarText.textContent = decodedText; actionBar.classList.add('active');
+    input.value = ''; autoResizeTextarea(); input.focus();
+  };
+
+  window.editMessage = function(id, oldText) {
+    cancelActiveMode(); const decodedText = decodeURIComponent(oldText); activeEditData = id;
+    const actionBarLine = document.getElementById('action-bar-line'); const actionBarTitle = document.getElementById('action-bar-title'); const actionBarText = document.getElementById('action-bar-text'); const actionBar = document.getElementById('action-bar');
+    actionBarLine.style.background = '#e5a93b'; actionBarTitle.textContent = 'Редактирование сообщения'; actionBarText.textContent = decodedText; actionBar.classList.add('active');
+    input.value = decodedText; autoResizeTextarea(); input.focus();
+  };
+
+  function cancelActiveMode() { activeReplyData = null; activeEditData = null; document.getElementById('action-bar').classList.remove('active'); }
+  document.getElementById('cancel-action').addEventListener('click', () => { cancelActiveMode(); input.value = ''; autoResizeTextarea(); });
+
+  window.scrollToMessage = function(targetId) {
+    const targetEl = document.getElementById(`msg-${targetId}`);
+    if (targetEl) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); targetEl.classList.add('highlight'); setTimeout(() => targetEl.classList.remove('highlight'), 1500); }
+  };
+
+  window.deleteMessage = function(id) { messageToDeleteId = id; deleteModal.classList.add('active'); };
+  modalCancelBtn.addEventListener('click', () => { deleteModal.classList.remove('active'); messageToDeleteId = null; });
+  deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) { deleteModal.classList.remove('active'); messageToDeleteId = null; } });
+  modalConfirmBtn.addEventListener('click', () => {
+    if (messageToDeleteId && currentChatId) {
+      const msgEl = document.getElementById(`msg-${messageToDeleteId}`); if (msgEl) msgEl.classList.add('removing');
+      setTimeout(() => { remove(ref(db, `chats/${currentChatId}/messages/` + messageToDeleteId)); }, 280);
+    }
+    deleteModal.classList.remove('active'); messageToDeleteId = null;
+  });
+
+  function closeAllPickers() { document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('expanded', 'active')); }
+  document.addEventListener('click', (e) => { if (!e.target.closest('.message') && !e.target.closest('.reaction-picker')) closeAllPickers(); });
+
+  window.openReactionPicker = function(chatId, id, e) {
+    e.preventDefault(); closeAllPickers();
+    const msgEl = document.getElementById(`msg-${id}`); const chatContainer = document.querySelector('.chat-container');
+    let picker = msgEl.querySelector('.reaction-picker');
+    if (!picker) {
+      picker = document.createElement('div'); picker.className = 'reaction-picker';
+      const quickDiv = document.createElement('div'); quickDiv.className = 'quick-emojis';
+      const quickEmojis = ['❤️', '😇', '🤔', '👍', '😡', '🥰', '😢'];
+      quickEmojis.forEach(emoji => {
+        const span = document.createElement('span'); span.textContent = emoji; span.onclick = () => window.toggleReaction(chatId, id, emoji);
+        quickDiv.appendChild(span);
+      });
+      const moreBtn = document.createElement('button'); moreBtn.className = 'more-reactions-btn'; moreBtn.title = 'Все реакции';
+      moreBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>`;
+      moreBtn.onclick = (ev) => { ev.stopPropagation(); picker.classList.toggle('expanded'); };
+      quickDiv.appendChild(moreBtn); picker.appendChild(quickDiv);
+      const extendedPanel = document.createElement('div'); extendedPanel.className = 'extended-reactions-panel';
+      const grid = document.createElement('div'); grid.className = 'extended-grid';
+      const allEmojisSet = new Set();
+      Object.values(emojiCategories).forEach(catArray => catArray.forEach(em => allEmojisSet.add(em)));
+      allEmojisSet.forEach(emoji => {
+        const span = document.createElement('span'); span.textContent = emoji; span.onclick = () => window.toggleReaction(chatId, id, emoji);
+        grid.appendChild(span);
+      });
+      extendedPanel.appendChild(grid); picker.appendChild(extendedPanel); msgEl.appendChild(picker);
+    }
+    picker.classList.add('active');
+    requestAnimationFrame(() => {
+      const pickerRect = picker.getBoundingClientRect(); const chatRect = chatContainer.getBoundingClientRect(); const msgRect = msgEl.getBoundingClientRect();
+      let centerOffset = (msgRect.width / 2) - (pickerRect.width / 2); let targetLeft = msgRect.left + centerOffset;
+      if (targetLeft < chatRect.left + 10) centerOffset += (chatRect.left + 10 - targetLeft);
+      else if (targetLeft + pickerRect.width > chatRect.right - 10) centerOffset -= ((targetLeft + pickerRect.width) - (chatRect.right - 10));
+      picker.style.left = `${centerOffset}px`; picker.style.transform = `scale(1) translateY(0)`;
+    });
+  };
+
+  window.toggleReaction = function(chatId, id, emoji) {
+    const currentMsgRef = ref(db, `chats/${chatId}/messages/${id}`);
+    get(currentMsgRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val(); let reactions = data.reactions || {}; let emojiUsers = reactions[emoji] || {};
+        if (emojiUsers[userId]) delete emojiUsers[userId]; else emojiUsers[userId] = true;
+        if (Object.keys(emojiUsers).length > 0) reactions[emoji] = emojiUsers; else delete reactions[emoji];
+        update(currentMsgRef, { reactions: reactions }); closeAllPickers();
+      }
+    });
+  };
+
+  window.handleMessageDblClick = function(chatId, id) {
+    window.toggleReaction(chatId, id, '❤️');
+    const msgEl = document.getElementById(`msg-${id}`);
+    if (msgEl) {
+      const heart = document.createElement('div'); heart.className = 'floating-heart'; heart.textContent = '❤️';
+      msgEl.appendChild(heart); setTimeout(() => heart.remove(), 600);
+    }
+  };
+
+  function buildMessageHTML(chatId, id, data) {
+    const isMy = data.userId === userId; const timestamp = data.timestamp ? data.timestamp : Date.now();
+    const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const editedMark = data.edited ? '<span class="edited-mark">изменено</span>' : '';
+    const safeText = encodeURIComponent(data.text);
+
+    let controls = `<div class="msg-controls"><span onclick="replyMessage('${id}', '${data.author}', '${safeText}')" title="Ответить">↩️</span><span onclick="copyMessage(this, '${safeText}')" title="Копировать текст">📋</span>`;
+    if (isMy) controls += `<span onclick="editMessage('${id}', '${safeText}')" title="Редактировать">✏️</span><span onclick="deleteMessage('${id}')" title="Удалить">🗑️</span>`;
+    controls += `</div>`;
+
+    let replyHTML = '';
+    if (data.replyTo) {
+      replyHTML = `<div class="message-reply" onclick="scrollToMessage('${data.replyTo.id}')"><span class="reply-author">${data.replyTo.author}</span><span class="reply-text">${data.replyTo.text}</span></div>`;
+    }
+
+    let ticksIcon = '';
+    if (isMy) {
+      ticksIcon = `<span class="status-ticks" title="Доставлено"><svg viewBox="0 0 16 11"><path d="M11.07 0.93L5.5 6.5L3.43 4.43L2 5.86L5.5 9.36L12.5 2.36L11.07 0.93Z"/></svg></span>`;
+    }
+
+    let reactionsHTML = '';
+    if (data.reactions) {
+      reactionsHTML = '<div class="message-reactions">';
+      for (let emoji in data.reactions) {
+        const usersCount = Object.keys(data.reactions[emoji]).length;
+        const hasMy = data.reactions[emoji][userId] ? 'active-my-reaction' : '';
+        reactionsHTML += `<div class="reaction-badge ${hasMy}" onclick="toggleReaction('${chatId}', '${id}', '${emoji}')"><span>${emoji}</span><span>${usersCount}</span></div>`;
+      }
+      reactionsHTML += '</div>';
+    }
+
+    return `
+      ${!isMy ? `<div class="message-author">${data.author}</div>` : ''}
+      ${replyHTML}
+      <div class="message-text">${data.text}</div>
+      ${reactionsHTML}
+      <div class="message-meta">
+        ${editedMark}
+        <span class="message-time">${timeString}</span>
+        ${ticksIcon}
+      </div>
+      ${controls}
+    `;
+  }
 </script>
 </body>
 </html>
