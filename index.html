@@ -1892,8 +1892,7 @@
       ${controls}
     `;
   }
-// 1. Вставляешь саму функцию где-нибудь внизу файла
-function playNotificationSound() {
+window.playNotificationSound = function() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
@@ -1901,7 +1900,7 @@ function playNotificationSound() {
 
         oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime);
-        
+
         gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
 
@@ -1913,14 +1912,6 @@ function playNotificationSound() {
     } catch (e) {
         console.log("Звук не воспроизлся:", e);
     }
-}
-
-// 2. Вызываешь её там, где у тебя обрабатывается приход нового сообщения
-function onNewMessageReceived(messageData) {
-    // ... твой код добавления сообщения в чат ...
-    
-    // Вуаля — звук проигрывается при новом сообщении!
-    playNotificationSound();
 }
 </script>
 </body>
