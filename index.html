@@ -22,6 +22,8 @@
       --modal-bg: #17212b;
       --modal-btn-hover: rgba(255, 255, 255, 0.08);
       --danger-color: #e53935;
+      --sidebar-bg: #17212b;
+      --sidebar-hover: #232e3c;
     }
 
     [data-theme="light"] {
@@ -40,6 +42,8 @@
       --modal-bg: #ffffff;
       --modal-btn-hover: rgba(0, 0, 0, 0.05);
       --danger-color: #d32f2f;
+      --sidebar-bg: #ffffff;
+      --sidebar-hover: #f1f3f4;
     }
 
     * { 
@@ -78,6 +82,130 @@
       }
     }
 
+    /* Боковое меню (Telegram Drawer) */
+    .sidebar {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 85%;
+      max-width: 320px;
+      height: 100%;
+      background: var(--sidebar-bg);
+      z-index: 200;
+      box-shadow: 5px 0 25px rgba(0,0,0,0.3);
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      color: var(--text-color);
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      background: var(--header-bg);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sidebar-user-name {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-user-handle {
+      font-size: 13px;
+      color: var(--subtitle-color);
+    }
+
+    .sidebar-search {
+      padding: 12px 15px;
+    }
+
+    .sidebar-search input {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      background: var(--input-bg);
+      color: var(--text-color);
+      outline: none;
+      font-size: 14px;
+    }
+
+    .chats-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .chat-item {
+      padding: 12px 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .chat-item:hover {
+      background: var(--sidebar-hover);
+    }
+
+    .chat-item .avatar {
+      width: 42px;
+      height: 42px;
+      background: var(--author-color);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .chat-item-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .chat-item-title {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-item-subtitle {
+      font-size: 13px;
+      color: var(--subtitle-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     /* Шапка */
     .chat-header { 
       padding: 12px 20px; 
@@ -103,6 +231,7 @@
       align-items: center;
       justify-content: center;
       font-size: 18px;
+      cursor: pointer;
     }
 
     .chat-header .title-area {
@@ -583,7 +712,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 100;
+      z-index: 300;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
@@ -928,10 +1057,26 @@
 <body>
 
 <div class="chat-container">
+  <!-- Боковое меню (Telegram Drawer) -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-user-name" id="sidebar-name">Имя</div>
+      <div class="sidebar-user-handle" id="sidebar-handle">@username</div>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" id="new-chat-input" placeholder="Найти по @username...">
+    </div>
+    <div class="chats-list" id="chats-list">
+      <!-- Список диалогов -->
+    </div>
+  </div>
+
   <div class="chat-header">
-    <div class="avatar">💬</div>
+    <div class="action-btn" id="menu-btn" title="Меню">☰</div>
+    <div class="avatar" id="header-avatar">💬</div>
     <div class="title-area">
-      <div class="title" id="header-title">AkrapCHAT</div>
+      <div class="title" id="header-title">Выберите чат</div>
       <div class="subtitle" id="header-subtitle">печатает...</div>
     </div>
     <div class="header-actions">
@@ -939,9 +1084,13 @@
     </div>
   </div>
   
-  <div class="messages-list" id="messages"></div>
+  <div class="messages-list" id="messages">
+    <div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">
+      Нажмите на меню (☰), чтобы выбрать или создать личный чат.
+    </div>
+  </div>
 
-  <!-- Модальное окно авторизации в стиле Telegram (с полями для Имени и Юзернейма) -->
+  <!-- Модальное окно авторизации в стиле Telegram -->
   <div class="modal-overlay" id="auth-modal">
     <div class="modal-box tg-auth-box">
       <div class="tg-logo">💬</div>
@@ -949,10 +1098,10 @@
       <div class="modal-desc" id="auth-modal-desc">Введите логин и пароль для входа</div>
       
       <div class="tg-input-group">
-        <input type="text" class="modal-input" id="auth-login" placeholder="Логин (для входа, например ivan)" autocomplete="username">
+        <input type="text" class="modal-input" id="auth-login" placeholder="Логин (например ivan)" autocomplete="username">
         <input type="password" class="modal-input" id="auth-password" placeholder="Пароль" autocomplete="current-password">
         <input type="text" class="modal-input" id="auth-name" placeholder="Ваше имя (например, Иван)" style="display:none;" autocomplete="name">
-        <input type="text" class="modal-input" id="auth-username" placeholder="Юзернейм (например, @ivan_chat)" style="display:none;" autocomplete="nickname">
+        <input type="text" class="modal-input" id="auth-username" placeholder="Юзернейм (например, @ivan)" style="display:none;" autocomplete="nickname">
       </div>
 
       <div class="modal-buttons" style="flex-direction: column; gap: 10px; margin-top: 15px;">
@@ -1003,13 +1152,13 @@
     </div>
 
     <form class="chat-input" id="chat-form">
-      <textarea id="message-input" placeholder="Сообщение" rows="1" required autocomplete="off"></textarea>
+      <textarea id="message-input" placeholder="Сообщение" rows="1" required autocomplete="off" disabled></textarea>
       <button type="button" class="input-icon-btn" id="emoji-btn" title="Выбрать эмодзи">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
         </svg>
       </button>
-      <button type="submit" title="Отправить">
+      <button type="submit" title="Отправить" id="send-btn" disabled>
         <svg class="send-icon" viewBox="0 0 24 24">
           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
         </svg>
@@ -1020,7 +1169,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, get, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const themeBtn = document.getElementById('theme-btn');
@@ -1043,34 +1192,51 @@
     }
   });
 
-  // Настройка подключения к Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyD5LO7zQ8Tpx71b-ykrh4dqasX_4ypXpyc",
-  authDomain: "akrapmsg.firebaseapp.com",
-  databaseURL: "https://akrapmsg-default-rtdb.firebaseio.com",
-  projectId: "akrapmsg",
-  storageBucket: "akrapmsg.firebasestorage.app",
-  messagingSenderId: "526501884029",
-  appId: "1:526501884029:web:3c26d1ba0b519eb78d0114"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5LO7zQ8Tpx71b-ykrh4dqasX_4ypXpyc",
+    authDomain: "akrapmsg.firebaseapp.com",
+    databaseURL: "https://akrapmsg-default-rtdb.firebaseio.com",
+    projectId: "akrapmsg",
+    storageBucket: "akrapmsg.firebasestorage.app",
+    messagingSenderId: "526501884029",
+    appId: "1:526501884029:web:3c26d1ba0b519eb78d0114"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
 
-  const messagesRef = ref(db, 'messages');
-  const typingRef = ref(db, 'typing');
-
   const messagesDiv = document.getElementById('messages');
   const form = document.getElementById('chat-form');
   const input = document.getElementById('message-input');
+  const sendBtn = document.getElementById('send-btn');
   const headerTitle = document.getElementById('header-title');
   const headerSubtitle = document.getElementById('header-subtitle');
+  const headerAvatar = document.getElementById('header-avatar');
   
   const emojiBtn = document.getElementById('emoji-btn');
   const emojiMenu = document.getElementById('emoji-menu');
   const emojiGrid = document.getElementById('emoji-grid');
   const emojiTabs = document.getElementById('emoji-tabs');
+
+  // Элементы бокового меню
+  const menuBtn = document.getElementById('menu-btn');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const sidebarName = document.getElementById('sidebar-name');
+  const sidebarHandle = document.getElementById('sidebar-handle');
+  const chatsListDiv = document.getElementById('chats-list');
+  const newChatInput = document.getElementById('new-chat-input');
+
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.add('active');
+    sidebarOverlay.classList.add('active');
+  });
+
+  sidebarOverlay.addEventListener('click', () => {
+    sidebar.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+  });
 
   // Авторизация
   const authModal = document.getElementById('auth-modal');
@@ -1085,6 +1251,9 @@ const firebaseConfig = {
   let userId = null;
   let username = null;
   let userHandle = null;
+  let currentChatId = null; // ID выбранного личного чата
+  let currentPartner = null; // Данные собеседника
+  let messagesUnsubscribe = null;
 
   authSwitchBtn.addEventListener('click', () => {
     isRegisterMode = !isRegisterMode;
@@ -1146,11 +1315,13 @@ const firebaseConfig = {
           set(ref(db, 'users/' + user.uid), { 
             name: name,
             username: handle,
-            login: login 
+            login: login,
+            uid: user.uid
           });
           username = name;
           userHandle = handle;
           userId = user.uid;
+          initUserSession();
           authModal.classList.remove('active');
         })
         .catch((error) => {
@@ -1165,7 +1336,7 @@ const firebaseConfig = {
         .then((userCredential) => {
           const user = userCredential.user;
           userId = user.uid;
-          onValue(ref(db, 'users/' + user.uid), (snapshot) => {
+          get(ref(db, 'users/' + user.uid)).then((snapshot) => {
             if (snapshot.exists()) {
               username = snapshot.val().name;
               userHandle = snapshot.val().username || ('@' + login);
@@ -1173,8 +1344,9 @@ const firebaseConfig = {
               username = login;
               userHandle = '@' + login;
             }
+            initUserSession();
             authModal.classList.remove('active');
-          }, { onlyOnce: true });
+          });
         })
         .catch((error) => {
           alert('Неверный логин или пароль!');
@@ -1182,18 +1354,10 @@ const firebaseConfig = {
     }
   });
 
-  [authLoginInput, authPasswordInput, authNameInput, authUsernameInput].forEach(element => {
-    element.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        authSubmitBtn.click();
-      }
-    });
-  });
-
   onAuthStateChanged(auth, (user) => {
     if (user) {
       userId = user.uid;
-      onValue(ref(db, 'users/' + user.uid), (snapshot) => {
+      get(ref(db, 'users/' + user.uid)).then((snapshot) => {
         if (snapshot.exists()) {
           username = snapshot.val().name;
           userHandle = snapshot.val().username || '';
@@ -1201,8 +1365,9 @@ const firebaseConfig = {
           username = "Пользователь";
           userHandle = '';
         }
+        initUserSession();
         authModal.classList.remove('active');
-      }, { onlyOnce: true });
+      });
     } else {
       userId = null;
       username = null;
@@ -1210,6 +1375,172 @@ const firebaseConfig = {
       authModal.classList.add('active');
     }
   });
+
+  function initUserSession() {
+    sidebarName.textContent = username;
+    sidebarHandle.textContent = userHandle;
+    loadUserChats();
+  }
+
+  // Поиск и добавление пользователей по юзернейму для создания приватного чата
+  newChatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      let query = newChatInput.value.trim().toLowerCase();
+      if (!query) return;
+      if (!query.startsWith('@')) query = '@' + query;
+
+      if (query === userHandle.toLowerCase()) {
+        alert('Нельзя создать чат с самим собой!');
+        return;
+      }
+
+      // Ищем пользователя в базе по username
+      get(ref(db, 'users')).then((snapshot) => {
+        if (snapshot.exists()) {
+          let foundUser = null;
+          snapshot.forEach((childSnap) => {
+            const uData = childSnap.val();
+            if (uData.username && uData.username.toLowerCase() === query) {
+              foundUser = { uid: childSnap.key, ...uData };
+            }
+          });
+
+          if (foundUser) {
+            openChatWith(foundUser);
+            newChatInput.value = '';
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+          } else {
+            alert('Пользователь с таким юзернейм не найден!');
+          }
+        }
+      });
+    }
+  });
+
+  // Загрузка списка чатов текущего пользователя
+  function loadUserChats() {
+    onValue(ref(db, 'user_chats/' + userId), (snapshot) => {
+      chatsListDiv.innerHTML = '';
+      if (!snapshot.exists()) {
+        chatsListDiv.innerHTML = '<div style="padding: 15px; color: var(--subtitle-color); font-size: 13px; text-align: center;">Нет активных чатов.<br>Введите @username выше, чтобы начать диалог.</div>';
+        return;
+      }
+
+      snapshot.forEach((chatSnap) => {
+        const chatData = chatSnap.val();
+        const chatId = chatSnap.key;
+        
+        const item = document.createElement('div');
+        item.className = 'chat-item';
+        item.innerHTML = `
+          <div class="avatar">${chatData.partnerName ? chatData.partnerName[0].toUpperCase() : '💬'}</div>
+          <div class="chat-item-info">
+            <div class="chat-item-title">${chatData.partnerName}</div>
+            <div class="chat-item-subtitle">${chatData.partnerHandle || ''}</div>
+          </div>
+        `;
+        item.onclick = () => {
+          openChatWith({ uid: chatData.partnerId, name: chatData.partnerName, username: chatData.partnerHandle }, chatId);
+          sidebar.classList.remove('active');
+          sidebarOverlay.classList.remove('active');
+        };
+        chatsListDiv.appendChild(item);
+      });
+    });
+  }
+
+  // Открыть конкретный чат с пользователем
+  function openChatWith(partner, existingChatId = null) {
+    currentPartner = partner;
+    
+    // Формируем уникальный chatId для двух людей независимо от того, кто первый начал
+    if (!existingChatId) {
+      const ids = [userId, partner.uid].sort();
+      currentChatId = ids[0] + '_' + ids[1];
+    } else {
+      currentChatId = existingChatId;
+    }
+
+    // Сохраняем информацию о чате для обоих пользователей в базе
+    set(ref(db, `user_chats/${userId}/${currentChatId}`), {
+      partnerId: partner.uid,
+      partnerName: partner.name,
+      partnerHandle: partner.username
+    });
+    
+    set(ref(db, `user_chats/${partner.uid}/${currentChatId}`), {
+      partnerId: userId,
+      partnerName: username,
+      partnerHandle: userHandle
+    });
+
+    headerTitle.textContent = partner.name;
+    headerAvatar.textContent = partner.name[0].toUpperCase();
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.placeholder = `Сообщение для ${partner.name}...`;
+
+    // Подгружаем сообщения для этого чата
+    loadMessagesForChat(currentChatId);
+  }
+
+  function loadMessagesForChat(chatId) {
+    messagesDiv.innerHTML = '';
+    const chatMessagesRef = ref(db, `chats/${chatId}/messages`);
+    
+    if (messagesUnsubscribe) {
+      // Отписываемся от предыдущего чата если был
+    }
+
+    onChildAdded(chatMessagesRef, (snapshot) => {
+      const data = snapshot.val();
+      const id = snapshot.key;
+      
+      const msgEl = document.createElement('div');
+      const isMy = data.userId === userId;
+      msgEl.className = `message ${isMy ? 'my' : 'other'}`;
+      msgEl.id = `msg-${id}`; 
+      msgEl.innerHTML = buildMessageHTML(chatId, id, data);
+      
+      msgEl.addEventListener('dblclick', () => handleMessageDblClick(chatId, id));
+      msgEl.addEventListener('contextmenu', (e) => openReactionPicker(chatId, id, e));
+
+      let pressTimer;
+      msgEl.addEventListener('touchstart', (e) => {
+        pressTimer = setTimeout(() => {
+          openReactionPicker(chatId, id, e);
+        }, 500);
+      });
+      msgEl.addEventListener('touchend', () => clearTimeout(pressTimer));
+      msgEl.addEventListener('touchmove', () => clearTimeout(pressTimer));
+      
+      messagesDiv.appendChild(msgEl);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    onChildChanged(chatMessagesRef, (snapshot) => {
+      const data = snapshot.val();
+      const id = snapshot.key;
+      const msgEl = document.getElementById(`msg-${id}`);
+      if (msgEl) {
+        msgEl.innerHTML = buildMessageHTML(chatId, id, data);
+      }
+    });
+
+    onChildRemoved(chatMessagesRef, (snapshot) => {
+      const id = snapshot.key;
+      const msgEl = document.getElementById(`msg-${id}`);
+      if (msgEl) {
+        if (!msgEl.classList.contains('removing')) {
+          msgEl.classList.add('removing');
+          setTimeout(() => msgEl.remove(), 280);
+        } else {
+          msgEl.remove();
+        }
+      }
+    });
+  }
 
   const emojiCategories = {
     smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
@@ -1288,12 +1619,12 @@ const firebaseConfig = {
   let activeReplyData = null;
   let activeEditData = null;
 
-  const myTypingRef = ref(db, 'typing/' + userId);
   let typingTimeout = null;
   let isCurrentlyTyping = false;
 
   input.addEventListener('input', () => {
-    if (!userId) return;
+    if (!userId || !currentChatId) return;
+    const myTypingRef = ref(db, `chats/${currentChatId}/typing/${userId}`);
     const text = input.value.trim();
     if (text.length > 0) {
       if (!isCurrentlyTyping) {
@@ -1314,35 +1645,37 @@ const firebaseConfig = {
   });
 
   form.addEventListener('submit', () => {
+    if (!currentChatId) return;
     isCurrentlyTyping = false;
-    remove(myTypingRef);
+    remove(ref(db, `chats/${currentChatId}/typing/${userId}`));
     clearTimeout(typingTimeout);
     emojiMenu.classList.remove('active');
   });
 
-  onValue(typingRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    let activeTypingNames = [];
+  // Отслеживание набора текста собеседником
+  function watchTyping(chatId) {
+    onValue(ref(db, `chats/${chatId}/typing`), (snapshot) => {
+      if (currentChatId !== chatId) return;
+      const data = snapshot.val() || {};
+      let isTyping = false;
 
-    for (let id in data) {
-      if (id !== userId && data[id].isTyping) {
-        activeTypingNames.push(data[id].name);
+      for (let id in data) {
+        if (id !== userId && data[id].isTyping) {
+          isTyping = true;
+          break;
+        }
       }
-    }
 
-    if (activeTypingNames.length > 0) {
-      headerTitle.style.display = 'none';
-      headerSubtitle.classList.add('active');
-      if (activeTypingNames.length === 1) {
-        headerSubtitle.textContent = `${activeTypingNames[0]} печатает...`;
+      if (isTyping) {
+        headerTitle.style.display = 'none';
+        headerSubtitle.classList.add('active');
+        headerSubtitle.textContent = 'печатает...';
       } else {
-        headerSubtitle.textContent = `несколько человек печатают...`;
+        headerSubtitle.classList.remove('active');
+        headerTitle.style.display = 'block';
       }
-    } else {
-      headerSubtitle.classList.remove('active');
-      headerTitle.style.display = 'block';
-    }
-  });
+    });
+  }
 
   window.copyMessage = function(element, text) {
     const decodedText = decodeURIComponent(text);
@@ -1431,11 +1764,11 @@ const firebaseConfig = {
   });
 
   modalConfirmBtn.addEventListener('click', () => {
-    if (messageToDeleteId) {
+    if (messageToDeleteId && currentChatId) {
       const msgEl = document.getElementById(`msg-${messageToDeleteId}`);
       if (msgEl) msgEl.classList.add('removing');
       setTimeout(() => {
-        remove(ref(db, 'messages/' + messageToDeleteId));
+        remove(ref(db, `chats/${currentChatId}/messages/` + messageToDeleteId));
       }, 280);
     }
     deleteModal.classList.remove('active');
@@ -1452,7 +1785,7 @@ const firebaseConfig = {
     }
   });
 
-  window.openReactionPicker = function(id, e) {
+  window.openReactionPicker = function(chatId, id, e) {
     e.preventDefault();
     closeAllPickers();
 
@@ -1470,7 +1803,7 @@ const firebaseConfig = {
       quickEmojis.forEach(emoji => {
         const span = document.createElement('span');
         span.textContent = emoji;
-        span.onclick = () => window.toggleReaction(id, emoji);
+        span.onclick = () => window.toggleReaction(chatId, id, emoji);
         quickDiv.appendChild(span);
       });
 
@@ -1504,7 +1837,7 @@ const firebaseConfig = {
       allEmojisSet.forEach(emoji => {
         const span = document.createElement('span');
         span.textContent = emoji;
-        span.onclick = () => window.toggleReaction(id, emoji);
+        span.onclick = () => window.toggleReaction(chatId, id, emoji);
         grid.appendChild(span);
       });
 
@@ -1534,36 +1867,34 @@ const firebaseConfig = {
     });
   };
 
-  window.toggleReaction = function(id, emoji) {
-    const currentMsgRef = ref(db, `messages/${id}`);
-    import("https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js").then(({ get }) => {
-      get(currentMsgRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          let reactions = data.reactions || {};
-          let emojiUsers = reactions[emoji] || {};
+  window.toggleReaction = function(chatId, id, emoji) {
+    const currentMsgRef = ref(db, `chats/${chatId}/messages/${id}`);
+    get(currentMsgRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        let reactions = data.reactions || {};
+        let emojiUsers = reactions[emoji] || {};
 
-          if (emojiUsers[userId]) {
-            delete emojiUsers[userId];
-          } else {
-            emojiUsers[userId] = true;
-          }
-
-          if (Object.keys(emojiUsers).length > 0) {
-            reactions[emoji] = emojiUsers;
-          } else {
-            delete reactions[emoji];
-          }
-
-          update(ref(db, `messages/${id}`), { reactions: reactions });
-          closeAllPickers();
+        if (emojiUsers[userId]) {
+          delete emojiUsers[userId];
+        } else {
+          emojiUsers[userId] = true;
         }
-      });
+
+        if (Object.keys(emojiUsers).length > 0) {
+          reactions[emoji] = emojiUsers;
+        } else {
+          delete reactions[emoji];
+        }
+
+        update(currentMsgRef, { reactions: reactions });
+        closeAllPickers();
+      }
     });
   };
 
-  window.handleMessageDblClick = function(id) {
-    window.toggleReaction(id, '❤️');
+  window.handleMessageDblClick = function(chatId, id) {
+    window.toggleReaction(chatId, id, '❤️');
     const msgEl = document.getElementById(`msg-${id}`);
     if (msgEl) {
       const heart = document.createElement('div');
@@ -1574,7 +1905,7 @@ const firebaseConfig = {
     }
   };
 
-  function buildMessageHTML(id, data) {
+  function buildMessageHTML(chatId, id, data) {
     const isMy = data.userId === userId;
     const timestamp = data.timestamp ? data.timestamp : Date.now();
     const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -1627,7 +1958,7 @@ const firebaseConfig = {
     }
 
     if (!isMy && !data.read) {
-      update(ref(db, 'messages/' + id), { read: true });
+      update(ref(db, `chats/${chatId}/messages/` + id), { read: true });
     }
 
     let reactionsHTML = '';
@@ -1638,7 +1969,7 @@ const firebaseConfig = {
         const count = Object.keys(users).length;
         if (count > 0) {
           reactionsHTML += `
-            <div class="reaction-badge" onclick="window.toggleReaction('${id}', '${emoji}')">
+            <div class="reaction-badge" onclick="window.toggleReaction('${chatId}', '${id}', '${emoji}')">
               <span>${emoji}</span>
               <span>${count}</span>
             </div>
@@ -1666,11 +1997,14 @@ const firebaseConfig = {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (!currentChatId) return;
     const text = input.value.trim();
     if (!text) return;
 
+    const chatMessagesRef = ref(db, `chats/${currentChatId}/messages`);
+
     if (activeEditData) {
-      update(ref(db, 'messages/' + activeEditData), { text: text, edited: true });
+      update(ref(db, `chats/${currentChatId}/messages/` + activeEditData), { text: text, edited: true });
       setTimeout(() => {
         const editedEl = document.getElementById(`msg-${activeEditData}`);
         if (editedEl) {
@@ -1696,62 +2030,12 @@ const firebaseConfig = {
         };
       }
 
-      push(messagesRef, newMessageData);
+      push(chatMessagesRef, newMessageData);
     }
 
     input.value = '';
     autoResizeTextarea();
     cancelActiveMode();
-  });
-
-  onChildAdded(messagesRef, (snapshot) => {
-    const data = snapshot.val();
-    const id = snapshot.key;
-    
-    const msgEl = document.createElement('div');
-    const isMy = data.userId === userId;
-    msgEl.className = `message ${isMy ? 'my' : 'other'}`;
-    msgEl.id = `msg-${id}`; 
-    msgEl.innerHTML = buildMessageHTML(id, data);
-    
-    msgEl.addEventListener('dblclick', () => handleMessageDblClick(id));
-    msgEl.addEventListener('contextmenu', (e) => openReactionPicker(id, e));
-
-    let pressTimer;
-    msgEl.addEventListener('touchstart', (e) => {
-      pressTimer = setTimeout(() => {
-        openReactionPicker(id, e);
-      }, 500);
-    });
-    msgEl.addEventListener('touchend', () => clearTimeout(pressTimer));
-    msgEl.addEventListener('touchmove', () => clearTimeout(pressTimer));
-    
-    messagesDiv.appendChild(msgEl);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  });
-
-  onChildChanged(messagesRef, (snapshot) => {
-    const data = snapshot.val();
-    const id = snapshot.key;
-    const msgEl = document.getElementById(`msg-${id}`);
-    
-    if (msgEl) {
-      msgEl.innerHTML = buildMessageHTML(id, data);
-    }
-  });
-
-  onChildRemoved(messagesRef, (snapshot) => {
-    const id = snapshot.key;
-    const msgEl = document.getElementById(`msg-${id}`);
-    
-    if (msgEl) {
-      if (!msgEl.classList.contains('removing')) {
-        msgEl.classList.add('removing');
-        setTimeout(() => msgEl.remove(), 280);
-      } else {
-        msgEl.remove();
-      }
-    }
   });
 </script>
 
