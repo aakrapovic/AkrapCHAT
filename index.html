@@ -1550,6 +1550,22 @@
       partnerAvatar: userAvatarUrl || '' 
     });
 
+    // Отметка всех сообщений в чате как прочитанных текущим пользователем
+    get(ref(db, `chats/${currentChatId}/messages`)).then((snapshot) => {
+      if (snapshot.exists()) {
+        const updates = {};
+        snapshot.forEach((childSnap) => {
+          const msg = childSnap.val();
+          if (msg.senderId !== userId && !msg.read) {
+            updates[`chats/${currentChatId}/messages/${childSnap.key}/read`] = true;
+          }
+        });
+        if (Object.keys(updates).length > 0) {
+          update(ref(db), updates);
+        }
+      }
+    });
+
     headerTitle.textContent = partner.name;
     
     if (partner.avatarUrl) {
@@ -1619,9 +1635,7 @@
       }
     });
 
-    partnerStatusUnsubscribe = () => {
-      // Отписка происходит автоматически через onValue или сохранением ссылки
-    };
+    partnerStatusUnsubscribe = () => {};
   }
 
   let typingTimeout = null;
@@ -1641,7 +1655,6 @@
     onValue(ref(db, `typing/${chatId}`), (snapshot) => {
       if (!snapshot.exists()) {
         if (currentChatId === chatId) {
-          // Если нет печатающих, возвращаем обычный статус сети/последнего входа
           if (currentPartner) {
             get(ref(db, `status/${currentPartner.uid}`)).then(sSnap => {
               if (sSnap.exists() && sSnap.val().state === 'online') {
@@ -1675,14 +1688,16 @@
     messagesDiv.innerHTML = '';
     const chatMessagesRef = ref(db, 'chats/' + chatId + '/messages');
     
-    // Снимаем предыдущий слушатель, если был
-    if (messagesUnsubscribe) {
-      // Firebase onChildAdded очищается выходом из контекста или перепривязкой, здесь используем простую очистку DOM
-    }
-
     onChildAdded(chatMessagesRef, (snapshot) => {
       if (currentChatId !== chatId) return;
-      renderMessage(snapshot.key, snapshot.val());
+      const msgData = snapshot.val();
+      
+      // Если сообщение не наше и оно не прочитано, автоматически помечаем как прочитанное при загрузке/получении в активном чате
+      if (msgData.senderId !== userId && !msgData.read) {
+        set(ref(db, `chats/${chatId}/messages/${snapshot.key}/read`), true);
+      }
+      
+      renderMessage(snapshot.key, msgData);
     });
 
     onChildChanged(chatMessagesRef, (snapshot) => {
@@ -1694,6 +1709,16 @@
       if (currentChatId !== chatId) return;
       removeMessageFromDOM(snapshot.key);
     });
+  }
+
+  function getTicksSvg(isRead) {
+    if (isRead) {
+      // Две галочки (прочитано)
+      return `<span class="status-ticks"><svg viewBox="0 0 16 15"><path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-2.35-2.35a.365.365 0 0 0-.51 0l-.477.477a.365.365 0 0 0 0 .51l3.082 3.082c.143.143.372.143.515 0l6.59-8.31a.365.365 0 0 0-.064-.512zm-4.75 0l-.478-.372a.365.365 0 0 0-.51.063L3.916 11.23a.32.32 0 0 1-.484.033L1.317 9.14a.365.365 0 0 0-.51 0l-.477.477a.365.365 0 0 0 0 .51l2.585 2.585c.143.143.372.143.515 0L10.26 3.828a.365.365 0 0 0-.001-.512z"/></svg></span>`;
+    } else {
+      // Одна галочка (отправлено, но не прочитано)
+      return `<span class="status-ticks"><svg viewBox="0 0 16 15"><path d="M14.01 4.316l-.478-.372a.365.365 0 0 0-.51.063L7.666 10.879a.32.32 0 0 1-.484.033L4.832 8.562a.365.365 0 0 0-.51 0l-.477.477a.365.365 0 0 0 0 .51l3.082 3.082c.143.143.372.143.515 0l6.59-8.31a.365.365 0 0 0-.064-.512z"/></svg></span>`;
+    }
   }
 
   function renderMessage(msgId, msgData) {
@@ -1715,7 +1740,7 @@
 
     const timeStr = new Date(msgData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const editedMark = msgData.edited ? '<span class="edited-mark">изм.</span>' : '';
-    const ticksSvg = isMy ? `<span class="status-ticks"><svg viewBox="0 0 16 15"><path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-2.35-2.35a.365.365 0 0 0-.51 0l-.477.477a.365.365 0 0 0 0 .51l3.082 3.082c.143.143.372.143.515 0l6.59-8.31a.365.365 0 0 0-.064-.512zm-4.75 0l-.478-.372a.365.365 0 0 0-.51.063L3.916 11.23a.32.32 0 0 1-.484.033L1.317 9.14a.365.365 0 0 0-.51 0l-.477.477a.365.365 0 0 0 0 .51l2.585 2.585c.143.143.372.143.515 0L10.26 3.828a.365.365 0 0 0-.001-.512z"/></svg></span>` : '';
+    const ticksSvg = isMy ? getTicksSvg(msgData.read) : '';
 
     let reactionsHtml = '';
     if (msgData.reactions) {
@@ -1759,8 +1784,8 @@
             <span>😐</span><span>😑</span><span>😶</span><span>😏</span><span>😒</span><span>🙄</span>
             <span>😬</span><span>🤥</span><span>😌</span><span>😔</span><span>😪</span><span>🤤</span>
             <span>😴</span><span>😷</span><span>🤒</span><span>🤕</span><span>🤢</span><span>🤮</span>
-            <span>🤧</span><span>热</span><span>🥴</span><span>🥺</span><span>😎</span><span>🤠</span>
-            <span>🥳</span><span>🥴</span><span>ș</span><span>🥶</span><span>😱</span><span>😨</span>
+            <span>🤧</span><span>🥵</span><span>🥴</span><span>🥺</span><span>😎</span><span>🤠</span>
+            <span>🥳</span><span>🥴</span><span>🥶</span><span>😱</span><span>😨</span>
             <span>👍</span><span>👎</span><span>👏</span><span>🙌</span><span>👐</span><span>🤲</span>
             <span>🤝</span><span>🙏</span><span>✍️</span><span>💅</span><span>🤳</span><span>💪</span>
           </div>
@@ -1847,7 +1872,7 @@
       const timeStr = new Date(msgData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const editedMark = msgData.edited ? '<span class="edited-mark">изм.</span>' : '';
       const isMy = msgData.senderId === userId;
-      const ticksSvg = isMy ? `<span class="status-ticks"><svg viewBox="0 0 16 15"><path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-2.35-2.35a.365.365 0 0 0-.51 0l-.477.477a.365.365 0 0 0 0 .51l3.082 3.082c.143.143.372.143.515 0l6.59-8.31a.365.365 0 0 0-.064-.512zm-4.75 0l-.478-.372a.365.365 0 0 0-.51.063L3.916 11.23a.32.32 0 0 1-.484.033L1.317 9.14a.365.365 0 0 0-.51 0l-.477.477a.365.365 0 0 0 0 .51l2.585 2.585c.143.143.372.143.515 0L10.26 3.828a.365.365 0 0 0-.001-.512z"/></svg></span>` : '';
+      const ticksSvg = isMy ? getTicksSvg(msgData.read) : '';
       metaEl.innerHTML = `${editedMark}<span class="message-time">${timeStr}</span>${ticksSvg}`;
     }
 
@@ -1880,7 +1905,7 @@
     const reactionRef = ref(db, `chats/${currentChatId}/messages/${msgId}/reactions/${userId}`);
     get(reactionRef).then((snapshot) => {
       if (snapshot.exists() && snapshot.val() === emoji) {
-        set(reactionRef, null); // Убираем реакцию при повторном клике
+        set(reactionRef, null);
       } else {
         set(reactionRef, emoji);
       }
@@ -1935,8 +1960,8 @@
   }
 
   modalCancel.onclick = () => {
-    deleteModal.classList.remove('active');
     messageToDelete = null;
+    deleteModal.classList.remove('active');
   };
 
   modalConfirm.onclick = () => {
@@ -1962,36 +1987,49 @@
         actionBar.classList.remove('active');
         input.value = '';
       });
-    } else {
-      const newMsgData = {
-        senderId: userId,
-        text: text,
-        timestamp: serverTimestamp()
-      };
-      if (replyingTo) {
-        newMsgData.replyTo = replyingTo;
-      }
-
-      push(ref(db, `chats/${currentChatId}/messages`), newMsgData).then(() => {
-        // Увеличиваем счетчик непрочитанных (unreadCount) у собеседника через транзакцию Firebase, 
-        // чтобы он корректно синхронизировался в реальном времени.
-        const partnerUid = currentPartner.uid;
-        const partnerChatRef = ref(db, `user_chats/${partnerUid}/${currentChatId}/unreadCount`);
-        runTransaction(partnerChatRef, (currentCount) => {
-          return (currentCount || 0) + 1;
-        });
-
-        replyingTo = null;
-        actionBar.classList.remove('active');
-        input.value = '';
-        input.style.height = 'auto';
-      });
+      return;
     }
-  });
 
-  input.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = (this.scrollHeight) + 'px';
+    const newMessageRef = push(ref(db, `chats/${currentChatId}/messages`));
+    const msgId = newMessageRef.key;
+
+    const msgData = {
+      senderId: userId,
+      text: text,
+      timestamp: serverTimestamp(),
+      read: false
+    };
+
+    if (replyingTo) {
+      msgData.replyTo = {
+        id: replyingTo.id,
+        author: replyingTo.author,
+        text: replyingTo.text
+      };
+    }
+
+    const updates = {};
+    updates[`chats/${currentChatId}/messages/${msgId}`] = msgData;
+
+    updates[`user_chats/${userId}/${currentChatId}`] = {
+      partnerId: currentPartner.uid,
+      partnerName: currentPartner.name,
+      partnerHandle: currentPartner.username,
+      partnerAvatar: currentPartner.avatarUrl || '',
+      unreadCount: 0
+    };
+
+    const partnerUnreadRef = ref(db, `user_chats/${currentPartner.uid}/${currentChatId}/unreadCount`);
+    runTransaction(partnerUnreadRef, (currentCount) => {
+      return (currentCount || 0) + 1;
+    });
+
+    update(ref(db), updates).then(() => {
+      input.value = '';
+      replyingTo = null;
+      actionBar.classList.remove('active');
+      set(ref(db, `typing/${currentChatId}/${userId}`), null);
+    });
   });
 
   input.addEventListener('keydown', (e) => {
@@ -2001,22 +2039,32 @@
     }
   });
 
-  // Эмодзи пикер логика
+  function escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+  }
+
   const emojisData = {
-    smileys: ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😙","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","热","🥴","🥺","😎","🤠","🥳","🥴","ș","🥶","😱","😨"],
-    gestures: ["👍","👎","👊","✊","🤛","🤜","🤞","✌️","🫰","🤟","🤘","👌","🤌","🤏","👈","👉","👆","👇","☝️","✋","🤚","🖐️","🖖","👋","🤙","💪","🦾","🖕","✍️","🙏","🦶","腿","🦿"],
-    hearts: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","❣️","💕","💞","💓","💗","💖","💘","💝","💟"],
-    animals: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🪱","🐛","🦋"],
-    food: ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🥬","🥒","🌶️","🌽","carrot","🧄","🧅","🥔","🍠","🥐","🥯","🍞","🥖","🥨","🧀","鸡蛋","🍳","🧈","🥞","🧇","🥓","🥩","🍗","🍖","🦴","hotdog","🍔","🍟","🍕"],
-    activities: ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱","🪀","🏓","🏸","🏒","🏑","🥍","🏏","🪃","🥅","⛳","🪁","🏹","🎣","🤿","boxing","🥋","🎽","🛹","🛼","sled","🥌","🎿","⛷️","snowboard","🪂","halter","🎽"],
-    objects: ["⌚","📱","📲","💻","⌨️","🖥️","🖨️","🖱️","🖲️","🕹️","🗜️","💽","💾","💿","DVD","📼","📷","📸","📹","🎥","📽️","🎞️","📞","☎️","📟","📠","📺","📻","🎙️","🎚️","🎛️","🧭","⏱️","⏲️","⏰","⏱️","⌛","⏳","📡","🔋","🔌","💡","🔦","🕯️","🪔","🧯","🛢️","💸","💵","💴","💶","💷","🪙","💰","💳","💎","⚖️"],
-    travel: ["🚗","🚕","🚙","🚌","🚎","🏎️","🚓","🚑","🚒","🚐","🛻","🚚","🚛","🚜","🏍️","🛵","🛺","🚲","🛴","🦽","🦼","🚨","🚔","🚍","🚘","🚖","🚡","🚠","🚟","🚃","🚋","鉄道","🚝","🚄","🚅","🚈","🚂","🚆","🚇","🚊","🚉","✈️","🛫","🛬","🛩️","💺","🛰️","🚀","🛸","🚁","🛶","⛵","🚤","🛥️","🛳️","⛴️","🚢"],
-    symbols: ["✨","⭐","🌟","💫","🔥","💥","💯","💢","💬","👁️‍🗨️","🗨️","🗯️","💭","💤","♠️","♣️","♥️","♦️","🃏","🎴","🛜","🛟","🛞","🛝","🛜","🌐","🌀","🌁","🌂","🌆","🌇","🌈","Блики","⚡","❄️","☃️","⛄","🔥"]
+    smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥴','🥺','🥳','😎','🥸','🧐','😕','😟','🙁','😮','😯','😲','😳','','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'],
+    gestures: ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪'],
+    hearts: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝','</i>'],
+    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪰','🪲','🪳','🦟','🦗','🕷️','🕸️','蝎','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🪸','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬','🐃','🐂','🐄','🐎','🐖','🐏','🐑',' llamas','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🪶','🐓','🦃','🦤','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔'],
+    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','バター','🥞','🧇','🥓','🥩','🍗','🍖','🦴','ホットドッグ','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯',' tamales','🥗','🥘','🫕','🥫','🍝','🍜','🍲','🍛','🍣','寿司','🍱','Dumpling','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣','🥡','🥢','🧂'],
+    activities: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','boxing','🥋','🎽','🛹','🛼','sled','🥌','ski','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🎫','🎟️','🎪','🎭','🩰','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩'],
+    objects: ['💻','🖥️','🖨️','⌨️','🖱️','🖲️','💽','💾','💿','📀',' calculadora','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','🪔','🧯','🛢️','💸','💵','💴','💶','💷','🪙','💰','💳','💎','⚖️','🪜','🧰','screwdriver','hammer','tools','⚙️','🗜️','⚗️','🧪','🧫','🧬','🔬','🔭','📡','💉','🩸','💊','🩹','🩺','🚪','🛏️','🛋️','🚽','🚿','🛁','🪞','🪟','🛍️','🛒','🎁','🎈','🎏','🎀','🪄','🪅','🎊','🎉','🎎','🏮','🎐','✉️','📩','📨','📧','💌','📥','📤','📦','🏷️','🪧','📪','📫','📬','🙢','🗂️','📅','📆','📇','📈','📉','📊','📋','📌','📍','📎','🖇️','📏','📐','✂️','🗃️','🗄️','🗑️','🔒','🔓','🔏','🔐','🔑','🗝️','🔨'],
+    travel: ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦯','🦽','🦼','🛴','🚲','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚄','🚅',' ट्रेन','🚇','轻轨','🚉','✈️','🛫','🛬','💺','🛰️','🚀','🛸','🚁','🛶','⛵','🚤','🛥️','🛳️','⛴️','🚢','⚓','🛟','아이콘','⛽','🚧','🚦','🚥','🚏','🗺️','🗿','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏖️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🛖','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','Ꮚ','⛪','🕌','🕍','⛩️','🕋','⛲','テント'],
+    symbols: ['❤️','💯','💢','💬','👁️‍🗨️','🗨️','🗯️','💭','💤','🏧','🚾','♿','🅿️','🈳','🈂️','🈁','🈹','🈴','🉐','̕','🈺','🈲','🉑','🈸','🈹','🈴','🈂️','🚻','🚹','🚺','🚼','🚾','🚰','🚮','🅿️','🛄','🛅','🛃','🛂','🛜','🛝','🛞','🛟','🏁','🚩','🎌','🏴','🏳️','🏳️‍🌈','🏳️‍⚧️','🏴‍☠️','🇦🇨','🇦🇩','🇦🇪','🇦🇫','🇦🇬','🇦🇮','🇦🇱','🇦🇲','🇦🇴','🇦🇶','🇦🇷','🇦🇸','AT','AU','AW','AX','AZ','BA','BB','BD','BE','BF','BG','BH','BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BV','BW','BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM','CN','CO','CP','CR','CU','CV','CW','CX','CY','CZ','DE','DG','DJ','DK','DM','DO','DZ','EA','EC','EE','EG','EH','ER','ES','ET','EU','FI','FJ','FK','FM','FO','FR','GA','GB','GD','GE','GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT','GU','GW','GY','HK','HM','HN','HR','HT','HU','IC','ID','IE','IL','IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA','LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC','MD','ME','MF','MG','MH','MK','ML','MM','MN','MO','MP','MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','ना','NC','NE','NF','NG','NI','NL','NO','NP','NR','NU','NZ','OM','PA','PE','PF','PG','PH','PK','PL','PM','PN','PR','PS','PT','PW','PY','QA','RE','RO','RS','RU','RW','SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM','SN','SO','SR','ss','ST','SV','SX','SY','SZ','TA','TC','TD','TF','TG','TH','TJ','TK','TL','TM','TN','TO','TR','TT','TV','TW','TZ','UA','UG','UM','US','UY','UZ','VA','VC','VE','VG','VI','VN','VU','WF','WS','XK','YE','YT','ZA','ZM','ZW']
   };
 
   function renderEmojis(category) {
     emojiGrid.innerHTML = '';
-    const list = emojisData[category] || emojisData.smileys;
+    const list = emojisData[category] || emojisData['smileys'];
     list.forEach(emoji => {
       const span = document.createElement('span');
       span.textContent = emoji;
@@ -2037,7 +2085,7 @@
   });
 
   document.addEventListener('click', (e) => {
-    if (!emojiMenu.contains(e.target) && e.target !== emojiBtn) {
+    if (!emojiMenu.contains(e.target) && e.target !== emojiBtn && !emojiBtn.contains(e.target)) {
       emojiMenu.classList.remove('active');
     }
   });
@@ -2049,11 +2097,6 @@
       renderEmojis(tab.getAttribute('data-category'));
     };
   });
-
-  function escapeHtml(text) {
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-  }
 </script>
 </body>
 </html>
