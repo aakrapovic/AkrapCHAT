@@ -107,6 +107,7 @@
       padding: 20px;
       background: var(--header-bg);
       border-bottom: 1px solid rgba(255,255,255,0.05);
+      position: relative;
     }
 
     .sidebar-user-name {
@@ -118,6 +119,37 @@
     .sidebar-user-handle {
       font-size: 13px;
       color: var(--subtitle-color);
+    }
+
+    .sidebar-user-bio {
+      font-size: 12px;
+      color: var(--subtitle-color);
+      margin-top: 6px;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-actions {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sidebar-btn {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+
+    .sidebar-btn:hover {
+      background: var(--sidebar-hover);
     }
 
     .sidebar-search {
@@ -242,6 +274,15 @@
     }
 
     .chat-header .title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-header .partner-bio {
+      font-size: 11px;
+      color: var(--subtitle-color);
+      font-weight: normal;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -769,6 +810,12 @@
       border-color: var(--author-color);
     }
 
+    textarea.modal-input {
+      resize: vertical;
+      min-height: 60px;
+      max-height: 120px;
+    }
+
     .modal-buttons {
       display: flex;
       justify-content: flex-end;
@@ -1063,6 +1110,12 @@
     <div class="sidebar-header">
       <div class="sidebar-user-name" id="sidebar-name">Имя</div>
       <div class="sidebar-user-handle" id="sidebar-handle">@username</div>
+      <div class="sidebar-user-bio" id="sidebar-bio">О себе не указано</div>
+    </div>
+    <div class="sidebar-actions">
+      <div class="sidebar-btn" id="open-settings-btn">
+        <span>⚙️</span> Настройки профиля
+      </div>
     </div>
     <div class="sidebar-search">
       <input type="text" id="new-chat-input" placeholder="Найти по @username...">
@@ -1077,6 +1130,7 @@
     <div class="avatar" id="header-avatar">💬</div>
     <div class="title-area">
       <div class="title" id="header-title">Выберите чат</div>
+      <div class="partner-bio" id="header-bio" style="display:none;"></div>
       <div class="subtitle" id="header-subtitle">печатает...</div>
     </div>
     <div class="header-actions">
@@ -1107,6 +1161,27 @@
       <div class="modal-buttons" style="flex-direction: column; gap: 10px; margin-top: 15px;">
         <button class="modal-btn tg-primary-btn" id="auth-submit-btn">Продолжить</button>
         <button class="modal-btn tg-switch-btn" id="auth-switch-btn">Создать аккаунт</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно настроек профиля -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-box">
+      <div class="modal-title">Настройки профиля</div>
+      <div class="modal-desc">Измените свои персональные данные:</div>
+      <label style="font-size: 12px; color: var(--subtitle-color);">Имя (Никнейм)</label>
+      <input type="text" class="modal-input" id="settings-name-input" placeholder="Имя">
+      
+      <label style="font-size: 12px; color: var(--subtitle-color);">Юзернейм (@username)</label>
+      <input type="text" class="modal-input" id="settings-username-input" placeholder="@username">
+      
+      <label style="font-size: 12px; color: var(--subtitle-color);">О себе (Описание)</label>
+      <textarea class="modal-input" id="settings-bio-input" placeholder="Напишите пару слов о себе..."></textarea>
+      
+      <div class="modal-buttons">
+        <button class="modal-btn" id="settings-cancel-btn">Отмена</button>
+        <button class="modal-btn" id="settings-save-btn">Сохранить</button>
       </div>
     </div>
   </div>
@@ -1211,6 +1286,7 @@
   const input = document.getElementById('message-input');
   const sendBtn = document.getElementById('send-btn');
   const headerTitle = document.getElementById('header-title');
+  const headerBio = document.getElementById('header-bio');
   const headerSubtitle = document.getElementById('header-subtitle');
   const headerAvatar = document.getElementById('header-avatar');
   
@@ -1225,8 +1301,18 @@
   const sidebarOverlay = document.getElementById('sidebar-overlay');
   const sidebarName = document.getElementById('sidebar-name');
   const sidebarHandle = document.getElementById('sidebar-handle');
+  const sidebarBio = document.getElementById('sidebar-bio');
   const chatsListDiv = document.getElementById('chats-list');
   const newChatInput = document.getElementById('new-chat-input');
+
+  // Элементы модального окна настроек
+  const openSettingsBtn = document.getElementById('open-settings-btn');
+  const settingsModal = document.getElementById('settings-modal');
+  const settingsNameInput = document.getElementById('settings-name-input');
+  const settingsUsernameInput = document.getElementById('settings-username-input');
+  const settingsBioInput = document.getElementById('settings-bio-input');
+  const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+  const settingsSaveBtn = document.getElementById('settings-save-btn');
 
   menuBtn.addEventListener('click', () => {
     sidebar.classList.add('active');
@@ -1251,9 +1337,9 @@
   let userId = null;
   let username = null;
   let userHandle = null;
+  let userBio = null;
   let currentChatId = null; // ID выбранного личного чата
   let currentPartner = null; // Данные собеседника
-  let messagesUnsubscribe = null;
 
   authSwitchBtn.addEventListener('click', () => {
     isRegisterMode = !isRegisterMode;
@@ -1316,10 +1402,12 @@
             name: name,
             username: handle,
             login: login,
+            bio: '',
             uid: user.uid
           });
           username = name;
           userHandle = handle;
+          userBio = '';
           userId = user.uid;
           initUserSession();
           authModal.classList.remove('active');
@@ -1338,11 +1426,14 @@
           userId = user.uid;
           get(ref(db, 'users/' + user.uid)).then((snapshot) => {
             if (snapshot.exists()) {
-              username = snapshot.val().name;
-              userHandle = snapshot.val().username || ('@' + login);
+              const uData = snapshot.val();
+              username = uData.name;
+              userHandle = uData.username || ('@' + login);
+              userBio = uData.bio || '';
             } else {
               username = login;
               userHandle = '@' + login;
+              userBio = '';
             }
             initUserSession();
             authModal.classList.remove('active');
@@ -1359,11 +1450,14 @@
       userId = user.uid;
       get(ref(db, 'users/' + user.uid)).then((snapshot) => {
         if (snapshot.exists()) {
-          username = snapshot.val().name;
-          userHandle = snapshot.val().username || '';
+          const uData = snapshot.val();
+          username = uData.name;
+          userHandle = uData.username || '';
+          userBio = uData.bio || '';
         } else {
           username = "Пользователь";
           userHandle = '';
+          userBio = '';
         }
         initUserSession();
         authModal.classList.remove('active');
@@ -1372,6 +1466,7 @@
       userId = null;
       username = null;
       userHandle = null;
+      userBio = null;
       authModal.classList.add('active');
     }
   });
@@ -1379,7 +1474,76 @@
   function initUserSession() {
     sidebarName.textContent = username;
     sidebarHandle.textContent = userHandle;
+    sidebarBio.textContent = userBio ? `О себе: ${userBio}` : 'О себе не указано';
     loadUserChats();
+  }
+
+  // Настройки профиля
+  openSettingsBtn.addEventListener('click', () => {
+    settingsNameInput.value = username || '';
+    settingsUsernameInput.value = userHandle || '';
+    settingsBioInput.value = userBio || '';
+    settingsModal.classList.add('active');
+  });
+
+  settingsCancelBtn.addEventListener('click', () => {
+    settingsModal.classList.remove('active');
+  });
+
+  settingsSaveBtn.addEventListener('click', () => {
+    const newName = settingsNameInput.value.trim();
+    let newHandle = settingsUsernameInput.value.trim();
+    const newBio = settingsBioInput.value.trim();
+
+    if (!newName) {
+      alert('Имя не может быть пустым!');
+      return;
+    }
+    if (!newHandle) {
+      alert('Юзернейм не может быть пустым!');
+      return;
+    }
+    if (!newHandle.startsWith('@')) {
+      newHandle = '@' + newHandle;
+    }
+
+    // Проверка уникальности юзернейма, если он изменился
+    if (newHandle.toLowerCase() !== userHandle.toLowerCase()) {
+      get(ref(db, 'users')).then((snapshot) => {
+        let exists = false;
+        if (snapshot.exists()) {
+          snapshot.forEach(childSnap => {
+            const val = childSnap.val();
+            if (val.username && val.username.toLowerCase() === newHandle.toLowerCase() && childSnap.key !== userId) {
+              exists = true;
+            }
+          });
+        }
+
+        if (exists) {
+          alert('Этот юзернейм уже занят другим пользователем!');
+        } else {
+          saveProfileChanges(newName, newHandle, newBio);
+        }
+      });
+    } else {
+      saveProfileChanges(newName, newHandle, newBio);
+    }
+  });
+
+  function saveProfileChanges(newName, newHandle, newBio) {
+    update(ref(db, `users/${userId}`), {
+      name: newName,
+      username: newHandle,
+      bio: newBio
+    }).then(() => {
+      username = newName;
+      userHandle = newHandle;
+      userBio = newBio;
+      initUserSession();
+      settingsModal.classList.remove('active');
+      alert('Профиль успешно обновлен!');
+    });
   }
 
   // Поиск и добавление пользователей по юзернейму для создания приватного чата
@@ -1441,9 +1605,16 @@
           </div>
         `;
         item.onclick = () => {
-          openChatWith({ uid: chatData.partnerId, name: chatData.partnerName, username: chatData.partnerHandle }, chatId);
-          sidebar.classList.remove('active');
-          sidebarOverlay.classList.remove('active');
+          // Получим актуальные данные о собеседнике
+          get(ref(db, `users/${chatData.partnerId}`)).then((pSnap) => {
+            let partnerObj = { uid: chatData.partnerId, name: chatData.partnerName, username: chatData.partnerHandle };
+            if (pSnap.exists()) {
+              partnerObj = { uid: chatData.partnerId, ...pSnap.val() };
+            }
+            openChatWith(partnerObj, chatId);
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+          });
         };
         chatsListDiv.appendChild(item);
       });
@@ -1454,7 +1625,6 @@
   function openChatWith(partner, existingChatId = null) {
     currentPartner = partner;
     
-    // Формируем уникальный chatId для двух людей независимо от того, кто первый начал
     if (!existingChatId) {
       const ids = [userId, partner.uid].sort();
       currentChatId = ids[0] + '_' + ids[1];
@@ -1462,7 +1632,6 @@
       currentChatId = existingChatId;
     }
 
-    // Сохраняем информацию о чате для обоих пользователей в базе
     set(ref(db, `user_chats/${userId}/${currentChatId}`), {
       partnerId: partner.uid,
       partnerName: partner.name,
@@ -1476,22 +1645,25 @@
     });
 
     headerTitle.textContent = partner.name;
+    if (partner.bio) {
+      headerBio.style.display = 'block';
+      headerBio.textContent = partner.bio;
+    } else {
+      headerBio.style.display = 'none';
+    }
+
     headerAvatar.textContent = partner.name[0].toUpperCase();
     input.disabled = false;
     sendBtn.disabled = false;
     input.placeholder = `Сообщение для ${partner.name}...`;
 
-    // Подгружаем сообщения для этого чата
     loadMessagesForChat(currentChatId);
+    watchTyping(currentChatId);
   }
 
   function loadMessagesForChat(chatId) {
     messagesDiv.innerHTML = '';
     const chatMessagesRef = ref(db, `chats/${chatId}/messages`);
-    
-    if (messagesUnsubscribe) {
-      // Отписываемся от предыдущего чата если был
-    }
 
     onChildAdded(chatMessagesRef, (snapshot) => {
       const data = snapshot.val();
@@ -1544,14 +1716,14 @@
 
   const emojiCategories = {
     smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
-    gestures: ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','👣','👂','🦻','👃','🧠','🦷','🦴','👀','👁️','👅','👄','💋','🩸','👶','👧','🧒','👦','👩','🧑','👨','👵','🧓','👴','👲','👳‍♀️','👳‍♂️','🧕','👮‍♀️','👮‍♂️','👷‍♀️','👷‍♂️','💂‍♀️','💂‍♂️','🕵️‍♀️','🕵️‍♂️','👩‍⚕️','👨‍⚕️','👩‍🌾','👨‍🌾','👩‍🍳','👨‍🍳','👩‍🎓','👨‍🎓','👩‍🎤','👨‍🎤','👩‍🏫','👨‍🏫','👩‍🏭','👨‍🏭','👩‍💻','👨‍💻','👩‍💼','👨‍💼','👩‍🔧','👨‍🔧','👩‍🔬','👨‍🔬','👩‍🎨','👨‍🎨','👩‍🚒','👨‍🚒','👩‍✈️','👨‍✈️','👩‍🚀','👨‍🚀','👩‍⚖️','👨‍⚖️','👰','🤵','👸','🤴','🦸‍♀️','🦸‍♂️','🦹‍♀️','🦹‍♂️','🤶','🎅','🧙‍♀️','🧙‍♂️','🧚‍♀️','🧚‍♂️','🧛‍♀️','🧛‍♂️','🧜‍♀️','🧜‍♂️','🧝‍♀️','🧝‍♂️','🧞‍♀️','🧞‍♂️','🧟‍♀️','🧟‍♂️','💆‍♀️','💆‍♂️','💇‍♀️','💇‍♂️','🚶‍♀️','🚶‍♂️','🏃‍♀️','🏃‍♂️','💃','🕺','👯‍♀️','👯‍♂️','🧖‍♀️','🧖‍♂️','🧎‍♀️','🧎‍♂️','🧍‍♀️','🧍‍♂️','👭','👫','👬','💑','👩‍❤️‍👩','👨‍❤️‍👨','💏','👩‍❤️‍💋‍👩','👨‍❤️‍💋‍👨'],
+    gestures: ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','👣','👂','🦻','鼻','脑','牙','骨','👀','👁️','舌','嘴','💋','🩸','👶','👧','🧒','👦','👩','🧑','👨','👵','🧓','👴','👲','👳‍♀️','👳‍♂️','🧕','👮‍♀️','👮‍♂️','👷‍♀️','👷‍♂️','💂‍♀️','💂‍♂️','🕵️‍♀️','🕵️‍♂️','👩‍⚕️','👨‍⚕️','👩‍🌾','👨‍🌾','👩‍🍳','👨‍🍳','👩‍🎓','👨‍🎓','👩‍🎤','👨‍🎤','👩‍🏫','👨‍🏫','👩‍🏭','👨‍🏭','👩‍💻','👨‍💻','👩‍💼','👨‍💼','👩‍🔧','👨‍🔧','👩‍🔬','👨‍🔬','👩‍🎨','👨‍🎨','👩‍🚒','👨‍🚒','👩‍✈️','👨‍✈️','👩‍🚀','👨‍🚀','👩‍⚖️','👨‍⚖️','👰','🤵','👸','🤴','🦸‍♀️','🦸‍♂️','🦹‍♀️','🦹‍♂️','🤶','🎅','🧙‍♀️','🧙‍♂️','🧚‍♀️','🧚‍♂️','雕','雕','🧜‍♀️','🧜‍♂️','🧝‍♀️','🧝‍♂️','🧞‍♀️','🧞‍♂️','🧟‍♀️','🧟‍♂️','💆‍♀️','💆‍♂️','💇‍♀️','💇‍♂️','🚶‍♀️','🚶‍♂️','🏃‍♀️','🏃‍♂️','💃','🕺','👯‍♀️','👯‍♂️','🧖‍♀️','🧖‍♂️','🧎‍♀️','🧎‍♂️','🧍‍♀️','🧍‍♂️','👭','👫','👬','💑','👩‍❤️‍👩','👨‍❤️‍👨','💏','👩‍❤️‍💋‍👩','👨‍❤️‍💋‍👨'],
     hearts: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌','💋','👥','👤','🗣️','💍','💎','👑','💐','🌸','💮','🏵️','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌲','🌳','🌴','🌵','🌾','🌿','☘️','🍀','🍁','🍂','🍃'],
-    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐗','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🕸️','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🪸','🐳','🐋','🐬','🦭','🐟','🐠','🐡','🦈','🐊','🐫','🦒','🐘','🦣','🦏','🦛','🐪','🐫','🦘','🦡','🐾','🐩','🦮','🐕‍🦺','🐈‍⬛','🐈','🐇','🦝','🦨','🦡','🦦','🦥','🐁','🐀','🐿️','🦔','🐉','🐲','🎄','🎆','🎇','🧨','✨','🎈','🎉','🎊','🎋','🎍','🎎','🎏','🎐','🎑','🧧'],
-    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🥗','🥘','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🫖','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🍷','🍸','🍹','🍾','🥃','🧊','🥢','🍽️','🍴','🥄','🔪','🏺'],
-    activities: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🎫','🎟️','🎪','🤹','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩','🧸','🪆','🪩','🪅','🪡','🧵','🧶'],
-    objects: ['💡','🔦','🕯️','🪔','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','🪞','🪟','🛏️','🛋️','🚽','🪠','🚿','🛁','🪥','🪒','🧽','🪣','🧴','🛎️','🔑','🗝️','🚪','🪑','🛍️','🛒','🎁','🎈','🎏','🎀','🪄','🪅','🎊','🎉','🪩','🕭','🔮','🧿','🪬','📜','📃','📑','📊','📈','📉','📇','🗃️','🗳️','🗄️','📋','📁','📂','🗂️','🗞️','📰','📓','📕','📗','📘','📙','📔','📒','📚','📖','🔖','🧷','🔗','📎','🖇️','📐','📏','🧮','📌','📍','✂️','🖊️','🖋️','✒️','🖌️','🖍️','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓','🧰','🛞','🔨','⚒️','🛠️','⛏️','🪓','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','⚗️','🧪','🧫','🧬','🔬','🔭','📡','💉','🩸','💊','🩹','🩺','🚪','🛗','🪞','🪟','🛏️','🛋️','🪑','🚽','🪠','🚿','🛁','🪤','🪒','🪥','🧽','🪣','🧴','🛎️'],
-    travel: ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🦽','🦼','🚟','🚠','🚡','🚢','⛵','🚤','🛥️','🛳️','⛴️','🚢','✈️','🛩️','🛫','🛬','🪂','💺','🚁','🚟','🛰️','rocket','🚀','🛸','🛰️','🚂','🚄','🚅','🚆','🚇','🚊','🚉','🚁','🛵','🛺','⚓','🚧','⛽','🛞','🧳','⌛','⏳','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏖️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏛️','⛪','🕌','🛕','🕍','⛩️','🕋','🌁','🌃','🏙️','🌄','🌅','🌆','🌇','🌉','♨️','🌌','🌠','🎇','🎆','🌇','⛑️','🛟','⛵','🛶','🚤','🛥️','🛳️','⛴️','🚢','✈️','🛩️','🛫','🛬','🪂','💺','🚁','🚟','🚡','🚠','🛰️','🚀','🛸'],
-    symbols: ['💯','💢','💬','👁️‍🗨️','🗨️','🗯️','💭','💤','🕳️','👓','🕶️','🥽','🥼','🦺','👔','👕','👖','🧣','🧤','🧥','🧦','👗','👘','🥻','🩱','🩲','🩳','👙','👚','👛','👜','👝','🎒','🛄','🛅','👞','👟','🥾','🥿','👠','👡','👢','👑','👒','🎩','🎓','🧢','⛑️','📿','💄','💍','💎','🔇','🔈','🔉','🔊','📢','📣','📯','🔔','🔕','🎼','🎵','🎶','🎤','🎧','📻','🎷','🪗','🎸','🎹','🎺','🎻','🪕','🥁','🪘','📱','📲','📞','☎️','📟','📠','🔋','🔌','💻','🖥️','🖨️','⌨️','🖱️','🖲️','💽','💾','💿','📀','🧮','🎥','🎞️','📽️','🎬','📺','📷','📸','📹','📼','🔍','🔎','🕯️','💡','🔦','🏮','🪔','📔','📕','📗','📘','📙','📚','📖','🔖','🧷','🔗','📎','🖇️','📐','📏','🧮','📌','📍','✂️','🖊️','🖋️','✒️','🖌️','🖍️','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌','💤','💢','💬','👁️‍🗨️','🗨️','🗯️','💭','♨️','💈','🛜','🏧','🚮','🚰','♿','🚹','🚺','🚻','🚼','🛗','🈁','🆆','🈹','vs','🈴','🈲','🛑','🕛','🕧','🕐','🕜','🕑','🕝','🕒','🕞','🕓','🕟','🕔','🕠','🕕','🕡','🕖','🕢','🕗','🕣','🕘','🕤','🕙','🕥','🕚','🕦']
+    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐗','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🕸️','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','crab','🪸','🐳','🐋','🐬','🦭','🐟','🐠','🐡','🦈','🐊','🐫','giraffe','elephant','🦣','🦏','🦛','🐪','🐫','🦘','🦡','🐾','🐩','🦮','🐕‍🦺','🐈‍⬛','🐈','🐇','🦝','🦨','🦡','Otter','🦥','🐁','🐀','🐿️','🦔','🐉','🐲','🎄','🎆','🎇','🧨','✨','🎈','🎉','🎊','🎋','🎍','🎎','🎏','🎐','🎑','🧧'],
+    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🫓','sandwich','🧆','taco','burrito','salad','🥘','canned','spaghetti','ramen','stew','curry','sushi','bento','dumpling','oyster','fried shrimp','rice ball','rice','rice cracker','fish cake','dango','shaved ice','ice cream','soft ice cream','pie','cupcake','cake','birthday cake','custard','lollipop','candy','chocolate bar','popcorn','donut','cookie','chestnut','peanuts','honey','milk','baby bottle','coffee','tea','green tea','juice','soda','bubble tea','sake','beer','beers','wine','cocktail','tropical drink','champagne','whisky','ice','chopsticks','plate','fork knife','spoon','knife','amphora'],
+    activities: ['⚽','🏀','🏈','⚾','🥎','tennis','volleyball','rugby','frisbee','pool','yo-yo','ping pong','badminton','hockey','field hockey','lacrosse','cricket','boomerang','goal','golf','kite','archery','fishing','diving','boxing','martial arts','running shirt','skateboard','roller skate','curling','skis','skiing','snowboard','paraglider','weight lifting','wrestling','gymnastics','basketball','fencing','handball','golfing','horse racing','yoga','surfing','swimming','water polo','rowing','climbing','biking','mountain biking','trophy','1st place','2nd place','3rd place','medal','military medal','ticket','tickets','circus','juggling','performing arts','art','film','microphone','headphones','score','piano','drum','saxophone','trumpet','guitar','banjo','violin','dice','chess','darts','bowling','video game','slot machine','puzzle','teddy bear','nesting dolls','mirror ball','piñata','sewing','thread','yarn'],
+    objects: ['💡','flashlight','candle','diya','phone','calling','computer','keyboard','desktop','printer','mouse','trackball','joystick','clamp','minidisc','floppy','cd','dvd','vhs','camera','photo','video camera','movie camera','projector','film frames','telephone','telephone receiver','pager','fax','tv','radio','microphone','level slider','control knobs','compass','stopwatch','timer','alarm clock','mantelpiece clock','hourglass','hourglass flow','satellite','battery','plug','mirror','window','bed','couch','toilet','plunger','shower','bathtub','toothbrush','razor','sponge','bucket','lotion','bell','key','old key','door','chair','shopping bags','shopping cart','gift','balloon','carp streamer','ribbon','magic wand','piñata','confetti','party popper','mirror ball','bell','crystal ball','nazar amulet','hamsa','scroll','paper','bookmark','bar chart','chart line','chart decrease','card index','card box','ballot box','file cabinet','clipboard','file folder','open folder','dividers','newspaper','newspaper2','notebook','notebook1','notebook2','blue book','orange book','books','book','bookmark','safety pin','link','paperclip','paperclips','ruler','triangular ruler','abacus','pushpin','round pushpin','scissors','pen','fountain pen','nib','paintbrush','crayon','memo','pencil','mag','mag right','lock with ink pen','closed lock with key','lock','unlock','wrench','tire','hammer','hammer and pick','tools','pick','axe','saw','nut and bolt','gear','mousetrap','brick','chains','magnet','test tube','petri dish','dna','microscope','telescope','satellite','syringe','drop of blood','pill','adhesive bandage','stethoscope','door','elevator','mirror','window','bed','couch','chair','toilet','plunger','shower','bathtub','mousetrap','razor','toothbrush','sponge','bucket','lotion','bell'],
+    travel: ['🚗','taxi','SUV','bus','trolleybus','racing car','police car','ambulance','fire engine','minibus','truck','articulated lorry','tractor','motorcycle','motor scooter','rickshaw','bicycle','kick scooter','wheelchair','motorized wheelchair','monorail','mountain railway','suspension railway','ship','sailboat','speedboat','motor boat','passenger ship','ferry','ship','airplane','small airplane','departure','arrival','paraglider','seat','helicopter','monorail','satellite','rocket','flying saucer','satellite','steam locomotive','railway car','high-speed train','bullet train','train','metro','tram','station','helicopter','motor scooter','rickshaw','anchor','construction','fuel pump','tire','luggage','hourglass','hourglass flow','statue of liberty','tokyo tower','castle','japanese castle','stadium','ferris wheel','roller coaster','carousel','fountain','umbrella','beach','desert island','desert','volcano','mountain','snow mountain','fuji','camping','tent','house','house with garden','homes','derelict house','building construction','factory','office','department store','post office','european post office','hospital','bank','hotel','convenience store','school','love hotel','wedding','museum','church','mosque','hindu temple','synagogue','shinto shrine','kaaba','foggy','night with stars','cityscape','sunrise over mountains','sunrise','city at dusk','sunset','bridge at night','hot springs','milky way','shooting star','sparkler','fireworks','sunset','helmet','ring buoy','sailboat','canoe','speedboat','motor boat','passenger ship','ferry','ship','airplane','small airplane','departure','arrival','paraglider','seat','helicopter','monorail','suspension railway','mountain cableway','satellite','rocket','flying saucer'],
+    symbols: ['💯','anger','speech','eye in speech bubble','left speech bubble','right anger bubble','thought','zzz','hole','glasses','sunglasses','goggles','lab coat','safety vest','necktie','t-shirt','jeans','scarf','gloves','coat','socks','dress','kimono','sari','one-piece swimsuit','briefs','shorts','bikini','womans clothes','purse','handbag','clutch','backpack','luggage','left luggage','mans shoe','athletic shoe','hiking boot','flat shoe','high heel','sandal','boot','crown','womans hat','tophat','graduation cap','billed cap','helmet','prayer beads','lipstick','ring','gem','mute','speaker','sound','loudspeaker','megaphone','postal horn','bell','no bell','score','notes','musical note','microphone','headphones','radio','saxophone','accordion','guitar','piano','trumpet','violin','banjo','drum','long drum','phone','calling','telephone','telephone receiver','pager','fax','battery','plug','computer','desktop','printer','keyboard','mouse','trackball','minidisc','floppy','cd','dvd','abacus','movie camera','film frames','projector','clapper','tv','camera','photo','video camera','vhs','mag','mag right','candle','bulb','flashlight','red paper lantern','diya','notebook','notebook1','notebook2','blue book','orange book','books','book','bookmark','safety pin','link','paperclip','paperclips','ruler','triangular ruler','abacus','pushpin','round pushpin','scissors','pen','fountain pen','nib','paintbrush','crayon','memo','pencil','mag','mag right','lock with ink pen','closed lock with key','lock','unlock','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌','zzz','anger','speech','eye in speech bubble','left speech bubble','right anger bubble','thought','hot springs','barber','wireless','atm','put litter in its place','potable water','wheelchair','mens','womens','restroom','baby symbol','elevator','koko','ng','u7981','vs','u6708','u6709','no entry','clock12','clock1230','clock1','clock130','clock2','clock230','clock3','clock330','clock4','clock430','clock5','clock530','clock6','clock630','clock7','clock730','clock8','clock830','clock9','clock930','clock10','clock1030','clock11','clock1130']
   };
 
   function renderEmojis(categoryKey) {
@@ -1644,14 +1816,6 @@
     }
   });
 
-  form.addEventListener('submit', () => {
-    if (!currentChatId) return;
-    isCurrentlyTyping = false;
-    remove(ref(db, `chats/${currentChatId}/typing/${userId}`));
-    clearTimeout(typingTimeout);
-    emojiMenu.classList.remove('active');
-  });
-
   // Отслеживание набора текста собеседником
   function watchTyping(chatId) {
     onValue(ref(db, `chats/${chatId}/typing`), (snapshot) => {
@@ -1668,11 +1832,15 @@
 
       if (isTyping) {
         headerTitle.style.display = 'none';
+        headerBio.style.display = 'none';
         headerSubtitle.classList.add('active');
         headerSubtitle.textContent = 'печатает...';
       } else {
         headerSubtitle.classList.remove('active');
         headerTitle.style.display = 'block';
+        if (currentPartner && currentPartner.bio) {
+          headerBio.style.display = 'block';
+        }
       }
     });
   }
@@ -1995,23 +2163,44 @@
     `;
   }
 
+  // Защищенный обработчик отправки формы с защитой от дубликатов
+  let isSending = false;
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (!currentChatId) return;
+    if (!currentChatId || isSending) return;
+    
     const text = input.value.trim();
     if (!text) return;
+
+    isCurrentlyTyping = false;
+    remove(ref(db, `chats/${currentChatId}/typing/${userId}`));
+    clearTimeout(typingTimeout);
+    emojiMenu.classList.remove('active');
+
+    isSending = true;
+    sendBtn.disabled = true;
 
     const chatMessagesRef = ref(db, `chats/${currentChatId}/messages`);
 
     if (activeEditData) {
-      update(ref(db, `chats/${currentChatId}/messages/` + activeEditData), { text: text, edited: true });
-      setTimeout(() => {
-        const editedEl = document.getElementById(`msg-${activeEditData}`);
-        if (editedEl) {
-          editedEl.classList.add('highlight');
-          setTimeout(() => editedEl.classList.remove('highlight'), 1500);
-        }
-      }, 100);
+      update(ref(db, `chats/${currentChatId}/messages/` + activeEditData), { 
+        text: text, 
+        edited: true 
+      })
+        .then(() => {
+          setTimeout(() => {
+            const editedEl = document.getElementById(`msg-${activeEditData}`);
+            if (editedEl) {
+              editedEl.classList.add('highlight');
+              setTimeout(() => editedEl.classList.remove('highlight'), 1500);
+            }
+          }, 100);
+        })
+        .finally(() => {
+          isSending = false;
+          sendBtn.disabled = false;
+        });
     } else {
       const newMessageData = { 
         author: username, 
@@ -2030,7 +2219,11 @@
         };
       }
 
-      push(chatMessagesRef, newMessageData);
+      push(chatMessagesRef, newMessageData)
+        .finally(() => {
+          isSending = false;
+          sendBtn.disabled = false;
+        });
     }
 
     input.value = '';
