@@ -919,7 +919,7 @@
     profileModal.classList.remove('active');
   });
 
-  // Логика удаления чата (синхронно для обоих пользователей)
+  // Логика удаления чата (полное удаление для обоих пользователей и сброс состояния)
   deleteChatBtn.addEventListener('click', () => {
     if (!currentPartner || !currentChatId) return;
     deleteChatDesc.innerHTML = `История сообщений с пользователем <strong>${currentPartner.name}</strong> будет удалена для обоих пользователей.`;
@@ -938,7 +938,7 @@
       const partnerUid = currentPartner.uid;
       const chatId = currentChatId;
 
-      // Полное удаление чата у обоих юзеров и удаление ветки сообщений
+      // Удаляем чат из списков обоих пользователей и саму ветку сообщений в базе
       const updates = {};
       updates[`user_chats/${userId}/${chatId}`] = null;
       updates[`user_chats/${partnerUid}/${chatId}`] = null;
@@ -946,28 +946,25 @@
 
       update(ref(db), updates).then(() => {
         showTgToast('Чат успешно удален');
-        closeActiveChatUI();
+        // Сбрасываем текущий открытый чат
+        currentChatId = null;
+        currentPartner = null;
+        if (partnerStatusUnsubscribe) partnerStatusUnsubscribe();
+
+        headerTitle.textContent = 'Выберите чат';
+        headerSubtitle.classList.remove('active');
+        headerAvatar.textContent = '💬';
+        headerStatusDot.classList.remove('online');
+        messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню, чтобы выбрать или создать личный чат.</div>';
+        chatInputWrapper.classList.remove('active');
+        input.disabled = true;
+        sendBtn.disabled = true;
+        searchBarWrapper.classList.remove('active');
       }).catch(() => {
         showTgToast('Ошибка при удалении чата');
       });
     }
   });
-
-  function closeActiveChatUI() {
-    currentChatId = null;
-    currentPartner = null;
-    if (partnerStatusUnsubscribe) partnerStatusUnsubscribe();
-
-    headerTitle.textContent = 'Выберите чат';
-    headerSubtitle.classList.remove('active');
-    headerAvatar.textContent = '💬';
-    headerStatusDot.classList.remove('online');
-    messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню, чтобы выбрать или создать личный чат.</div>';
-    chatInputWrapper.classList.remove('active');
-    input.disabled = true;
-    sendBtn.disabled = true;
-    searchBarWrapper.classList.remove('active');
-  }
 
   blockUserBtn.addEventListener('click', () => {
     if (!currentPartner) return;
@@ -1090,7 +1087,14 @@
     signOut(auth).then(() => {
       logoutModal.classList.remove('active');
       sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active');
-      closeActiveChatUI();
+      currentChatId = null; currentPartner = null;
+      headerTitle.textContent = 'Выберите чат'; headerBio.style.display = 'none';
+      headerSubtitle.classList.remove('active'); headerAvatar.textContent = '💬';
+      headerStatusDot.classList.remove('online');
+      messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню, чтобы выбрать или создать личный чат.</div>';
+      chatInputWrapper.classList.remove('active');
+      input.disabled = true; sendBtn.disabled = true;
+      searchBarWrapper.classList.remove('active');
     }).catch(() => showTgToast('Ошибка при выходе'));
   });
 
@@ -1106,7 +1110,6 @@
   let userId = null; let username = null; let userHandle = null; let userBio = null;
   let currentChatId = null; let currentPartner = null;
   let partnerStatusUnsubscribe = null;
-  let chatRemovedListener = null;
 
   authSwitchBtn.addEventListener('click', () => {
     isRegisterMode = !isRegisterMode;
@@ -1304,6 +1307,23 @@
   function loadUserChats() {
     onValue(ref(db, 'user_chats/' + userId), (snapshot) => {
       chatsListDiv.innerHTML = '';
+      
+      // Если текущий чат был удален у обоих, проверяем его наличие в актуальном списке
+      if (currentChatId && snapshot.exists() && !snapshot.hasChild(currentChatId)) {
+        currentChatId = null;
+        currentPartner = null;
+        if (partnerStatusUnsubscribe) partnerStatusUnsubscribe();
+        headerTitle.textContent = 'Выберите чат';
+        headerSubtitle.classList.remove('active');
+        headerAvatar.textContent = '💬';
+        headerStatusDot.classList.remove('online');
+        messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Чат был удален. Выберите или создайте другой чат.</div>';
+        chatInputWrapper.classList.remove('active');
+        input.disabled = true;
+        sendBtn.disabled = true;
+        searchBarWrapper.classList.remove('active');
+      }
+
       if (!snapshot.exists()) {
         chatsListDiv.innerHTML = '<div style="padding: 15px; color: var(--subtitle-color); font-size: 13px; text-align: center;">Нет чатов.<br>Введите @username выше.</div>'; return;
       }
@@ -1377,20 +1397,8 @@
     loadMessagesForChat(currentChatId); 
     watchTyping(currentChatId);
     watchPartnerStatus(partner.uid);
-    watchCurrentChatRemoval(currentChatId);
 
     searchBarWrapper.classList.remove('active'); msgSearchInput.value = '';
-  }
-
-  function watchCurrentChatRemoval(chatId) {
-    if (chatRemovedListener) chatRemovedListener();
-    
-    const myChatRef = ref(db, `user_chats/${userId}/${chatId}`);
-    chatRemovedListener = onValue(myChatRef, (snapshot) => {
-      if (!snapshot.exists() && currentChatId === chatId) {
-        closeActiveChatUI();
-      }
-    });
   }
 
   function watchPartnerStatus(partnerUid) {
@@ -1461,19 +1469,295 @@
     });
   }
 
-  // Вспомогательные функции рендеринга сообщений и интерфейса
+  const emojiCategories = {
+    smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+    gestures: ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','👣','👂','🦻','👀','👁️','💋','🩸'],
+    hearts: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌'],
+    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐗','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🕸️','🐢','🐍','🐙','🦑','🦐','🦞','🪸','🐳','🐋','🐬','🦭','🐟','🐠','🐡','🦈','🐊','🐪','🐘','🦣','🦏','🦛','🐪','🐫','🦘','🦡','🐾','🐩','🦮','🐕‍🦺','🐈‍⬛','🐈','🐇','🦝','🦨','🦡','🦥','🐁','🐀','🐿️','🦔','🐉','🐲'],
+    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🌮','🌯','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🍷','🍸','🍹','🍾','🥃','🧊','🥢','🍽️','🍴','🥄','🔪','🏺'],
+    activities: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🎫','🎟️','🎪','🤹','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩'],
+    objects: ['💡','🔦','🕯️','🪔','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','🪞','🪟','🛏️','🛋️','🚽','🪠','🚿','🛁','🪥','🪒','🧽','🪣','🧴','🛎️','🔑','🗝️','🚪','🪑','🛍️','🛒','🎁','🎈','🎏','🎀','🪄','🪅','🎊','🎉','🪩','🎐','🔮','🧿','🪬','📜','📄','🔖','📊','📈','📉','📇','🗃️','🗳️','🗄️','📋','📁','📂','🗂️','🗞️','📰','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🧷','🔗','📎','🖇️','📐','📏','🧮','📌','📍','✂️','🖊️','🖋️','✒️','🖌️','🖍️','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓','🔧','🛞','🔨','⚒️','🛠️','⛏️','🪓','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','🧪','🧫','🧬','🔬','🔭','📡','💉','🩸','💊','🩹','🩺'],
+    travel: ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🦽','🦼','🚝','🚞','🚟','🚢','⛵','🚤','🛥️','🛳️','⛴️','🛳️','✈️','🛩️','🛫','🛬','🪂','💺','🚁','🚟','🛰️','🚀','🛸','🛰️','🚂','🚃','🚄','🚅','🚆','🚇','🚊','🚉','🚁','🛵','🛺','⚓','🚧','⛽','🛞','🧳','⌛','⏳','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛️','⛪','🕌','🛕','🕍','⛩️','🕋','🌁','🌃','🏙️','🌄','🌅','🌆','🌇','🌉','♨️','🌌','🌠','🎇','🎆','🌇'],
+    symbols: ['💯','💢','💬','👁️‍🗨️','🗯️','💭','💤','🕳️','👓','🕶️','🥽','🥼','🦺','👔','👕','👖','🧣','🧤','🧥','🧦','👗','👘','🥻','🩱','🩲','3','👙','👚','👛','👜','👝','🎒','🧳','💼','👞','👟','🥾','🥿','👠','👡','👢','👑','👒','🎩','🎓','🧢','⛑️','📿','💄','💍','💎','🔇','🔈','🔉','🔊','📢','📣','📯','🔔','🔕','🎼','🎵','🎶','🎙️','🎚️','🎛️','🎤','🎧','📻','🎷','🪗','🎸','🎹','🎺','🎻','🪕','🥁','🪘','📱','📲','☎️','📞','📟','📠','🔋','🔌','💻','🖥️','🖨️','⌨️','🖱️','🖲️','💽','💾','💿','📀','🧮','🎥','🎞️','📽️','🎬','📺','📷','📸','📹','📼','🔍','🔎','🕯️','💡','🔦','🏮','🪔','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🧷','🔗','📎','🖇️','📐','📏','🧮','📌','📍','✂️','🖊️','🖋️','✒️','🖌️','🖍️','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓']
+  };
+
+  function renderEmojis(categoryKey) {
+    emojiGrid.innerHTML = '';
+    const emojis = emojiCategories[categoryKey] || [];
+    emojis.forEach(emoji => {
+      const span = document.createElement('span'); span.textContent = emoji;
+      span.onclick = () => {
+        const start = input.selectionStart; const end = input.selectionEnd; const text = input.value;
+        input.value = text.substring(0, start) + emoji + text.substring(end);
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        autoResizeTextarea(); input.focus();
+      };
+      emojiGrid.appendChild(span);
+    });
+  }
+
+  renderEmojis('smileys');
+  emojiTabs.querySelectorAll('span').forEach(tab => {
+    tab.addEventListener('click', () => {
+      emojiTabs.querySelectorAll('span').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active'); renderEmojis(tab.getAttribute('data-category'));
+    });
+  });
+
+  emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiMenu.classList.toggle('active'); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.emoji-picker-menu') && !e.target.closest('#emoji-btn')) emojiMenu.classList.remove('active'); });
+
+  function autoResizeTextarea() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
+  input.addEventListener('input', autoResizeTextarea);
+  
+  input.addEventListener('keydown', (e) => { 
+    if (e.key === 'Enter' && !e.shiftKey) { 
+      e.preventDefault(); 
+      if (!isSending) {
+        form.requestSubmit();
+      }
+    } 
+  });
+
+  const deleteModal = document.getElementById('delete-modal');
+  const modalCancelBtn = document.getElementById('modal-cancel');
+  const modalConfirmBtn = document.getElementById('modal-confirm');
+  let messageToDeleteId = null; let activeReplyData = null; let activeEditData = null;
+  let typingTimeout = null; let isCurrentlyTyping = false;
+
+  input.addEventListener('input', () => {
+    if (!userId || !currentChatId) return;
+    const myTypingRef = ref(db, `chats/${currentChatId}/typing/${userId}`);
+    const text = input.value.trim();
+    if (text.length > 0) {
+      if (!isCurrentlyTyping) { isCurrentlyTyping = true; set(myTypingRef, { name: username, isTyping: true }); onDisconnect(myTypingRef).remove(); }
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => { isCurrentlyTyping = false; remove(myTypingRef); }, 3000);
+    } else {
+      isCurrentlyTyping = false; remove(myTypingRef); clearTimeout(typingTimeout);
+    }
+  });
+
+  function watchTyping(chatId) {
+    onValue(ref(db, `chats/${chatId}/typing`), (snapshot) => {
+      if (currentChatId !== chatId) return;
+      const data = snapshot.val() || {}; let isTyping = false;
+      for (let id in data) { if (id !== userId && data[id].isTyping) { isTyping = true; break; } }
+      if (isTyping) {
+        headerStatusDot.classList.remove('online');
+        headerTitle.style.display = 'none'; headerBio.style.display = 'none'; headerSubtitle.classList.add('active'); headerSubtitle.textContent = 'печатает...';
+      } else {
+        headerTitle.style.display = 'block'; 
+        if (currentPartner) {
+          get(ref(db, `status/${currentPartner.uid}`)).then((snap) => {
+            if (snap.exists()) {
+              const sVal = snap.val();
+              if (sVal.state === 'online') {
+                headerStatusDot.classList.add('online');
+                headerSubtitle.textContent = 'в сети';
+              } else {
+                headerStatusDot.classList.remove('online');
+                headerSubtitle.textContent = formatLastSeen(sVal.lastChanged);
+              }
+              headerSubtitle.classList.add('active');
+            }
+          });
+        }
+      }
+    });
+  }
+
+  window.copyMessage = function(element, text) {
+    const decodedText = decodeURIComponent(text);
+    navigator.clipboard.writeText(decodedText).then(() => {
+      const originalHTML = element.innerHTML; element.innerHTML = '✔️'; setTimeout(() => { element.innerHTML = originalHTML; }, 1200);
+    });
+  };
+
+  window.replyMessage = function(id, author, text) {
+    cancelActiveMode(); const decodedText = decodeURIComponent(text); activeReplyData = { id, author, text: decodedText };
+    const actionBarLine = document.getElementById('action-bar-line'); const actionBarTitle = document.getElementById('action-bar-title'); const actionBarText = document.getElementById('action-bar-text'); const actionBar = document.getElementById('action-bar');
+    actionBarLine.style.background = 'var(--author-color)'; actionBarTitle.textContent = author; actionBarText.textContent = decodedText; actionBar.classList.add('active');
+    input.value = ''; autoResizeTextarea(); input.focus();
+  };
+
+  window.editMessage = function(id, oldText) {
+    cancelActiveMode(); const decodedText = decodeURIComponent(oldText); activeEditData = id;
+    const actionBarLine = document.getElementById('action-bar-line'); const actionBarTitle = document.getElementById('action-bar-title'); const actionBarText = document.getElementById('action-bar-text'); const actionBar = document.getElementById('action-bar');
+    actionBarLine.style.background = '#e5a93b'; actionBarTitle.textContent = 'Редактирование сообщения'; actionBarText.textContent = decodedText; actionBar.classList.add('active');
+    input.value = decodedText; autoResizeTextarea(); input.focus();
+  };
+
+  function cancelActiveMode() { activeReplyData = null; activeEditData = null; document.getElementById('action-bar').classList.remove('active'); }
+  document.getElementById('cancel-action').addEventListener('click', () => { cancelActiveMode(); input.value = ''; autoResizeTextarea(); });
+
+  window.scrollToMessage = function(targetId) {
+    const targetEl = document.getElementById(`msg-${targetId}`);
+    if (targetEl) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); targetEl.classList.add('highlight'); setTimeout(() => targetEl.classList.remove('highlight'), 1500); }
+  };
+
+  window.deleteMessage = function(id) { messageToDeleteId = id; deleteModal.classList.add('active'); };
+  modalCancelBtn.addEventListener('click', () => { deleteModal.classList.remove('active'); messageToDeleteId = null; });
+  deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) { deleteModal.classList.remove('active'); messageToDeleteId = null; } });
+  modalConfirmBtn.addEventListener('click', () => {
+    if (messageToDeleteId && currentChatId) {
+      const msgEl = document.getElementById(`msg-${messageToDeleteId}`); if (msgEl) msgEl.classList.add('removing');
+      setTimeout(() => { remove(ref(db, `chats/${currentChatId}/messages/` + messageToDeleteId)); }, 280);
+    }
+    deleteModal.classList.remove('active'); messageToDeleteId = null;
+  });
+
+  function closeAllPickers() { document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('expanded', 'active')); }
+  document.addEventListener('click', (e) => { if (!e.target.closest('.message') && !e.target.closest('.reaction-picker')) closeAllPickers(); });
+
+  window.openReactionPicker = function(chatId, id, e) {
+    e.preventDefault(); closeAllPickers();
+    const msgEl = document.getElementById(`msg-${id}`); const chatContainer = document.querySelector('.chat-container');
+    let picker = msgEl.querySelector('.reaction-picker');
+    if (!picker) {
+      picker = document.createElement('div'); picker.className = 'reaction-picker';
+      const quickDiv = document.createElement('div'); quickDiv.className = 'quick-emojis';
+      const quickEmojis = ['❤️', '😇', '🤔', '👍', '😡', '🥰', '😢'];
+      quickEmojis.forEach(emoji => {
+        const span = document.createElement('span'); span.textContent = emoji; span.onclick = () => window.toggleReaction(chatId, id, emoji);
+        quickDiv.appendChild(span);
+      });
+      const moreBtn = document.createElement('button'); moreBtn.className = 'more-reactions-btn'; moreBtn.title = 'Все реакции';
+      moreBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>`;
+      moreBtn.onclick = (ev) => { ev.stopPropagation(); picker.classList.toggle('expanded'); };
+      quickDiv.appendChild(moreBtn); picker.appendChild(quickDiv);
+      const extendedPanel = document.createElement('div'); extendedPanel.className = 'extended-reactions-panel';
+      const grid = document.createElement('div'); grid.className = 'extended-grid';
+      const allEmojisSet = new Set();
+      Object.values(emojiCategories).forEach(catArray => catArray.forEach(em => allEmojisSet.add(em)));
+      allEmojisSet.forEach(emoji => {
+        const span = document.createElement('span'); span.textContent = emoji; span.onclick = () => window.toggleReaction(chatId, id, emoji);
+        grid.appendChild(span);
+      });
+      extendedPanel.appendChild(grid); picker.appendChild(extendedPanel); msgEl.appendChild(picker);
+    }
+    picker.classList.add('active');
+    requestAnimationFrame(() => {
+      const pickerRect = picker.getBoundingClientRect(); const chatRect = chatContainer.getBoundingClientRect(); const msgRect = msgEl.getBoundingClientRect();
+      let centerOffset = (msgRect.width / 2) - (pickerRect.width / 2); let targetLeft = msgRect.left + centerOffset;
+      if (targetLeft < chatRect.left + 10) centerOffset += (chatRect.left + 10 - targetLeft);
+      else if (targetLeft + pickerRect.width > chatRect.right - 10) centerOffset -= ((targetLeft + pickerRect.width) - (chatRect.right - 10));
+      picker.style.left = `${centerOffset}px`; picker.style.transform = `scale(1) translateY(0)`;
+    });
+  };
+
+  window.toggleReaction = function(chatId, id, emoji) {
+    const currentMsgRef = ref(db, `chats/${chatId}/messages/${id}`);
+    get(currentMsgRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val(); let reactions = data.reactions || {}; let emojiUsers = reactions[emoji] || {};
+        if (emojiUsers[userId]) delete emojiUsers[userId]; else emojiUsers[userId] = true;
+        if (Object.keys(emojiUsers).length > 0) reactions[emoji] = emojiUsers; else delete reactions[emoji];
+        update(currentMsgRef, { reactions: reactions }); closeAllPickers();
+      }
+    });
+  };
+
+  window.handleMessageDblClick = function(chatId, id) {
+    window.toggleReaction(chatId, id, '❤️');
+    const msgEl = document.getElementById(`msg-${id}`);
+    if (msgEl) {
+      const heart = document.createElement('div'); heart.className = 'floating-heart'; heart.textContent = '❤️';
+      msgEl.appendChild(heart); setTimeout(() => heart.remove(), 600);
+    }
+  };
+
   function buildMessageHTML(chatId, id, data) {
-    return `<div class="message-text">${escapeHtml(data.text)}</div>`;
+    const isMy = data.userId === userId; const timestamp = data.timestamp ? data.timestamp : Date.now();
+    const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const editedMark = data.edited ? '<span class="edited-mark">изменено</span>' : '';
+    const safeText = encodeURIComponent(data.text);
+
+    let controls = `<div class="msg-controls"><span onclick="replyMessage('${id}', '${data.author}', '${safeText}')" title="Ответить">↩️</span><span onclick="copyMessage(this, '${safeText}')" title="Копировать текст">📋</span>`;
+    if (isMy) controls += `<span onclick="editMessage('${id}', '${safeText}')" title="Редактировать">✏️</span><span onclick="deleteMessage('${id}')" title="Удалить">🗑️</span>`;
+    controls += `</div>`;
+
+    let replyHTML = '';
+    if (data.replyTo) {
+      replyHTML = `<div class="message-reply" onclick="scrollToMessage('${data.replyTo.id}')"><span class="reply-author">${data.replyTo.author}</span><span class="reply-text">${data.replyTo.text}</span></div>`;
+    }
+
+    let ticksIcon = '';
+    if (isMy) {
+      if (data.read) ticksIcon = `<span class="status-ticks" title="Прочитано"><svg viewBox="0 0 16 11"><path d="M11.07 0.93L5.5 6.5L3.43 4.43L2 5.86L5.5 9.36L12.5 2.36L11.07 0.93ZM14.07 0.93L13.36 1.64L14.79 3.07L15.5 2.36L14.07 0.93ZM12.64 3.79L5.5 10.93L4.07 9.5L11.21 2.36L12.64 3.79Z"/></svg></span>`;
+      else ticksIcon = `<span class="status-ticks" title="Доставлено"><svg viewBox="0 0 16 11"><path d="M5.5 9.36L2 5.86L3.43 4.43L5.5 6.5L12.5 0.93L13.93 2.36L5.5 9.36Z"/></svg></span>`;
+    }
+    if (!isMy && !data.read) update(ref(db, `chats/${chatId}/messages/` + id), { read: true });
+
+    let reactionsHTML = '';
+    if (data.reactions) {
+      reactionsHTML += '<div class="message-reactions">';
+      for (let emoji in data.reactions) {
+        const users = data.reactions[emoji]; const count = Object.keys(users).length;
+        if (count > 0) reactionsHTML += `<div class="reaction-badge" onclick="window.toggleReaction('${chatId}', '${id}', '${emoji}')"><span>${emoji}</span><span>${count}</span></div>`;
+      }
+      reactionsHTML += '</div>';
+    }
+
+    const handleDisplay = data.userHandle ? `<span class="message-username">${data.userHandle}</span>` : '';
+
+    return `
+      ${!isMy ? `<div class="message-author">${data.author} ${handleDisplay}</div>` : ''}
+      ${replyHTML}
+      <div class="message-text">${data.text}</div>
+      ${reactionsHTML}
+      ${controls}
+      <div class="message-meta">${editedMark}<span class="message-time">${timeString}</span>${ticksIcon}</div>
+    `;
   }
 
-  function escapeHtml(text) {
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-  }
+  let isSending = false;
 
-  function handleMessageDblClick(chatId, id) {}
-  function openReactionPicker(chatId, id, e) { e.preventDefault(); }
-  function watchTyping(chatId) {}
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!currentChatId || isSending) return;
+    
+    const text = input.value.trim();
+    if (!text) return;
+    
+    isSending = true;
+    input.value = '';
+    autoResizeTextarea();
+
+    if (activeEditData) {
+      const editMsgId = activeEditData;
+      cancelActiveMode();
+      update(ref(db, `chats/${currentChatId}/messages/${editMsgId}`), {
+        text: text,
+        edited: true
+      }).finally(() => {
+        isSending = false;
+        input.focus();
+      });
+    } else {
+      const chatMessagesRef = ref(db, `chats/${currentChatId}/messages`);
+      const newMsgRef = push(chatMessagesRef);
+      
+      let replyDataObj = null;
+      if (activeReplyData) {
+        replyDataObj = { id: activeReplyData.id, author: activeReplyData.author, text: activeReplyData.text };
+        cancelActiveMode();
+      }
+
+      set(newMsgRef, {
+        userId: userId,
+        author: username,
+        userHandle: userHandle,
+        text: text,
+        timestamp: serverTimestamp(),
+        read: false,
+        replyTo: replyDataObj
+      }).finally(() => {
+        isSending = false;
+        input.focus();
+      });
+    }
+  });
 </script>
 </body>
 </html>
