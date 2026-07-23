@@ -226,6 +226,22 @@
     .chat-item-title { font-weight: 600; font-size: 15px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-item-subtitle { font-size: 13px; color: var(--subtitle-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+    /* Бейдж непрочитанных сообщений в стиле Telegram */
+    .unread-badge {
+      background-color: var(--telegram-blue);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+      min-width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
     .sidebar-overlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
       z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
@@ -1207,7 +1223,7 @@
   let userId = null; let username = null; let userHandle = null; let userBio = null; let userAvatarUrl = null;
   let currentChatId = null; let currentPartner = null;
   let partnerStatusUnsubscribe = null;
-  let activeChatUnsubscribe = null; // Отслеживание удаления самого чата
+  let activeChatUnsubscribe = null;
   let newAvatarBase64 = null;
 
   authSwitchBtn.addEventListener('click', () => {
@@ -1473,6 +1489,10 @@
           ? `<img src="${chatData.partnerAvatar}" style="width:100%; height:100%; object-fit:cover;">` 
           : (chatData.partnerName ? chatData.partnerName[0].toUpperCase() : '💬');
 
+        // Отображение индикатора (бейджа) непрочитанных сообщений в стиле Telegram
+        const unreadCount = chatData.unreadCount || 0;
+        const unreadBadgeHTML = unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : '';
+
         item.innerHTML = `
           <div class="avatar-wrapper">
             <div class="avatar">${avatarContent}</div>
@@ -1481,7 +1501,8 @@
           <div class="chat-item-info">
             <div class="chat-item-title">${chatData.partnerName}</div>
             <div class="chat-item-subtitle">${chatData.partnerHandle || ''}</div>
-          </div>`;
+          </div>
+          ${unreadBadgeHTML}`;
         
         onValue(ref(db, `status/${chatData.partnerId}`), (statusSnap) => {
           const dot = item.querySelector(`#chat-item-dot-${chatData.partnerId}`);
@@ -1513,8 +1534,21 @@
       const ids = [userId, partner.uid].sort(); currentChatId = ids[0] + '_' + ids[1];
     } else { currentChatId = existingChatId; }
 
-    set(ref(db, `user_chats/${userId}/${currentChatId}`), { partnerId: partner.uid, partnerName: partner.name, partnerHandle: partner.username, partnerAvatar: partner.avatarUrl || '' });
-    set(ref(db, `user_chats/${partner.uid}/${currentChatId}`), { partnerId: userId, partnerName: username, partnerHandle: userHandle, partnerAvatar: userAvatarUrl || '' });
+    // При открытии чата сбрасываем счетчик непрочитанных (unreadCount = 0) для текущего пользователя
+    update(ref(db, `user_chats/${userId}/${currentChatId}`), { 
+      partnerId: partner.uid, 
+      partnerName: partner.name, 
+      partnerHandle: partner.username, 
+      partnerAvatar: partner.avatarUrl || '',
+      unreadCount: 0 
+    });
+
+    set(ref(db, `user_chats/${partner.uid}/${currentChatId}`), { 
+      partnerId: userId, 
+      partnerName: username, 
+      partnerHandle: userHandle, 
+      partnerAvatar: userAvatarUrl || '' 
+    });
 
     headerTitle.textContent = partner.name;
     
@@ -1546,18 +1580,16 @@
     loadMessagesForChat(currentChatId); 
     watchTyping(currentChatId);
     watchPartnerStatus(partner.uid);
-    watchChatDeletion(currentChatId); // Отслеживание удаления чата у обоих пользователей
+    watchChatDeletion(currentChatId);
 
     searchBarWrapper.classList.remove('active'); msgSearchInput.value = '';
   }
 
-  // Функция для синхронного выкидывания из чата, если любой из пользователей его удалил
   function watchChatDeletion(chatId) {
     if (activeChatUnsubscribe) activeChatUnsubscribe();
     
     const chatRef = ref(db, `chats/${chatId}`);
     const unsubChat = onValue(chatRef, (snapshot) => {
-      // Если узел чата полностью удален в БД
       if (!snapshot.exists() && currentChatId === chatId) {
         showTgToast('Чат был удален');
         resetChatState();
@@ -1566,7 +1598,6 @@
 
     const myUserChatRef = ref(db, `user_chats/${userId}/${chatId}`);
     const unsubUserChat = onValue(myUserChatRef, (snapshot) => {
-      // Если ссылка на чат в профиле пользователя исчезла
       if (!snapshot.exists() && currentChatId === chatId) {
         resetChatState();
       }
@@ -1763,6 +1794,25 @@
         msgData.replyTo = { id: activeReplyData.id, author: activeReplyData.author, text: activeReplyData.text };
       }
       push(ref(db, `chats/${currentChatId}/messages`), msgData);
+
+      // Синхронизация непрочитанных сообщений: увеличиваем счетчик `unreadCount` у получателя
+      if (currentPartner) {
+        const partnerChatRef = ref(db, `user_chats/${currentPartner.uid}/${currentChatId}`);
+        get(partnerChatRef).then((snap) => {
+          let currentUnread = 0;
+          if (snap.exists() && snap.val().unreadCount) {
+            currentUnread = snap.val().unreadCount;
+          }
+          update(partnerChatRef, {
+            partnerId: userId,
+            partnerName: username,
+            partnerHandle: userHandle,
+            partnerAvatar: userAvatarUrl || '',
+            unreadCount: currentUnread + 1
+          });
+        });
+      }
+
       cancelActiveMode();
     }
     input.value = '';
@@ -1778,30 +1828,27 @@
 
   window.replyMessage = function(id, author, text) {
     cancelActiveMode(); const decodedText = decodeURIComponent(text); activeReplyData = { id, author, text: decodedText };
-    const actionBarLine = document.getElementById('action-bar-line'); const actionBarTitle = document.getElementById('action-bar-title'); const actionBarText = document.getElementById('action-bar-text'); const actionBar = document.getElementById('action-bar');
-    actionBarLine.style.background = 'var(--author-color)'; actionBarTitle.textContent = author; actionBarText.textContent = decodedText; actionBar.classList.add('active');
-    input.value = ''; autoResizeTextarea(); input.focus();
+    document.getElementById('action-bar').classList.add('active');
+    document.getElementById('action-bar-line').style.background = 'var(--author-color)';
+    document.getElementById('action-bar-title').textContent = author;
+    document.getElementById('action-bar-text').textContent = decodedText;
+    input.focus();
   };
 
-  window.editMessage = function(id, oldText) {
-    cancelActiveMode(); const decodedText = decodeURIComponent(oldText); activeEditData = id;
-    const actionBarLine = document.getElementById('action-bar-line'); const actionBarTitle = document.getElementById('action-bar-title'); const actionBarText = document.getElementById('action-bar-text'); const actionBar = document.getElementById('action-bar');
-    actionBarLine.style.background = '#e5a93b'; actionBarTitle.textContent = 'Редактирование сообщения'; actionBarText.textContent = decodedText; actionBar.classList.add('active');
+  window.editMessage = function(id, text) {
+    cancelActiveMode(); const decodedText = decodeURIComponent(text); activeEditData = id;
+    document.getElementById('action-bar').classList.add('active');
+    document.getElementById('action-bar-line').style.background = '#f1c40f';
+    document.getElementById('action-bar-title').textContent = 'Редактирование сообщения';
+    document.getElementById('action-bar-text').textContent = decodedText;
     input.value = decodedText; autoResizeTextarea(); input.focus();
   };
 
-  function cancelActiveMode() { activeReplyData = null; activeEditData = null; document.getElementById('action-bar').classList.remove('active'); }
-  document.getElementById('cancel-action').addEventListener('click', () => { cancelActiveMode(); input.value = ''; autoResizeTextarea(); });
-
-  window.scrollToMessage = function(targetId) {
-    const targetEl = document.getElementById(`msg-${targetId}`);
-    if (targetEl) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); targetEl.classList.add('highlight'); setTimeout(() => targetEl.classList.remove('highlight'), 1500); }
+  window.deleteMessagePrompt = function(id) {
+    messageToDeleteId = id; deleteModal.classList.add('active');
   };
 
-  window.deleteMessage = function(id) { messageToDeleteId = id; deleteModal.classList.add('active'); };
   modalCancelBtn.addEventListener('click', () => { deleteModal.classList.remove('active'); messageToDeleteId = null; });
-  deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) deleteModal.classList.remove('active'); });
-
   modalConfirmBtn.addEventListener('click', () => {
     if (messageToDeleteId && currentChatId) {
       remove(ref(db, `chats/${currentChatId}/messages/${messageToDeleteId}`)).then(() => {
@@ -1810,14 +1857,31 @@
     }
   });
 
+  document.getElementById('cancel-action').addEventListener('click', cancelActiveMode);
+  function cancelActiveMode() {
+    activeReplyData = null; activeEditData = null;
+    document.getElementById('action-bar').classList.remove('active');
+    if (input.value === (activeEditData ? input.value : '')) {
+      input.value = ''; autoResizeTextarea();
+    }
+  }
+
+  function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
   function buildMessageHTML(chatId, id, data) {
     const isMy = data.userId === userId;
     const encodedText = encodeURIComponent(data.text);
-    const escapedText = data.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    
+    const timeStr = formatTime(data.timestamp);
+
     let replyHTML = '';
     if (data.replyTo) {
-      const encReplyText = encodeURIComponent(data.replyTo.text);
+      const encodedReplyText = encodeURIComponent(data.replyTo.text);
       replyHTML = `
         <div class="message-reply" onclick="scrollToMessage('${data.replyTo.id}')">
           <div class="reply-author">${data.replyTo.author}</div>
@@ -1829,123 +1893,116 @@
     if (data.reactions) {
       reactionsHTML = '<div class="message-reactions">';
       for (let emoji in data.reactions) {
-        let users = data.reactions[emoji];
-        let count = Object.keys(users).length;
-        let hasMy = users[userId] ? 'active' : '';
-        reactionsHTML += `<div class="reaction-badge ${hasMy}" onclick="toggleReaction('${chatId}', '${id}', '${emoji}')"><span>${emoji}</span><span>${count}</span></div>`;
+        const users = data.reactions[emoji];
+        const count = Object.keys(users).length;
+        const hasReacted = users[userId] !== undefined;
+        reactionsHTML += `<div class="reaction-badge ${hasReacted ? 'active' : ''}" onclick="toggleReaction('${chatId}', '${id}', '${emoji}')"><span>${emoji}</span><span>${count}</span></div>`;
       }
       reactionsHTML += '</div>';
     }
 
-    let timeStr = '';
-    if (data.timestamp) {
-      const date = new Date(data.timestamp);
-      timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
     let controlsHTML = `
       <div class="msg-controls">
-        <span onclick="replyMessage('${id}', '${data.author}', '${encodedText}')" title="Ответить">↩️</span>
-        <span onclick="copyMessage(this, '${encodedText}')" title="Копировать">📋</span>`;
+        <span onclick="copyMessage(this, '${encodedText}')" title="Копировать">📋</span>
+        <span onclick="replyMessage('${id}', '${data.author}', '${encodedText}')" title="Ответить">↩️</span>`;
     if (isMy) {
       controlsHTML += `
         <span onclick="editMessage('${id}', '${encodedText}')" title="Изменить">✏️</span>
-        <span onclick="deleteMessage('${id}')" title="Удалить">🗑️</span>`;
+        <span onclick="deleteMessagePrompt('${id}')" title="Удалить">🗑️</span>`;
     }
-    controlsHTML += `</div>`;
-
-    let pickerHTML = `
-      <div class="reaction-picker" id="picker-${id}">
-        <div class="quick-emojis">
-          <span onclick="addReaction('${chatId}', '${id}', '❤️')">❤️</span>
-          <span onclick="addReaction('${chatId}', '${id}', '👍')">👍</span>
-          <span onclick="addReaction('${chatId}', '${id}', '🔥')">🔥</span>
-          <span onclick="addReaction('${chatId}', '${id}', '😂')">😂</span>
-          <span onclick="addReaction('${chatId}', '${id}', '😢')">😢</span>
-          <button class="more-reactions-btn" onclick="toggleExtendedReactions(event, '${id}')">
-            <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-          </button>
-        </div>
-        <div class="extended-reactions-panel" id="extended-panel-${id}">
-          <div class="extended-grid">
-            <span onclick="addReaction('${chatId}', '${id}', '👏')">👏</span>
-            <span onclick="addReaction('${chatId}', '${id}', '😍')">😍</span>
-            <span onclick="addReaction('${chatId}', '${id}', '🎉')">🎉</span>
-            <span onclick="addReaction('${chatId}', '${id}', '💩')">💩</span>
-            <span onclick="addReaction('${chatId}', '${id}', '🙏')">🙏</span>
-            <span onclick="addReaction('${chatId}', '${id}', '💯')">💯</span>
-            <span onclick="addReaction('${chatId}', '${id}', '🔥')">🔥</span>
-            <span onclick="addReaction('${chatId}', '${id}', '👍')">👍</span>
-            <span onclick="addReaction('${chatId}', '${id}', '👎')">👎</span>
-            <span onclick="addReaction('${chatId}', '${id}', '❤️')">❤️</span>
-            <span onclick="addReaction('${chatId}', '${id}', '💔')">💔</span>
-            <span onclick="addReaction('${chatId}', '${id}', '🤔')">🤔</span>
-          </div>
-        </div>
-      </div>`;
+    controlsHTML += '</div>';
 
     return `
-      ${pickerHTML}
       ${!isMy ? `<div class="message-author">${data.author}</div>` : ''}
       ${replyHTML}
-      <div class="message-text">${escapedText}</div>
+      <div class="message-text">${escapeHtml(data.text)}</div>
       ${reactionsHTML}
       <div class="message-meta">
         ${data.edited ? '<span class="edited-mark">изменено</span>' : ''}
-        <span>${timeStr}</span>
-        ${isMy ? '<span class="status-ticks"><svg viewBox="0 0 16 12"><path d="M11.2 0.3L4.8 6.7 1.9 3.8 0.5 5.2 4.8 9.5 12.6 1.7z"/><path d="M15.5 1.7L14.1 0.3 7.8 6.6 7.1 5.9 5.7 7.3 7.8 9.4z"/></svg></span>' : ''}
+        <span class="message-time">${timeStr}</span>
+        ${isMy ? '<span class="status-ticks"><svg viewBox="0 0 16 12"><path d="M11.2 0.3L4.8 6.7 1.9 3.8 0.5 5.2 4.8 9.5 12.6 1.7z M15.5 1.7L14.1 0.3 6.2 8.1 4.8 6.7 3.4 8.1 6.2 11z"/></svg></span>' : ''}
       </div>
-      ${controlsHTML}`;
+      ${controlsHTML}
+    `;
   }
 
-  window.openReactionPicker = function(chatId, id, e) {
-    e.preventDefault(); e.stopPropagation();
-    document.querySelectorAll('.reaction-picker').forEach(p => { if (p.id !== `picker-${id}`) p.classList.remove('active'); });
-    const picker = document.getElementById(`picker-${id}`);
-    if (picker) picker.classList.toggle('active');
-  };
+  function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+  }
 
-  document.addEventListener('click', () => {
-    document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('active'));
-  });
-
-  window.toggleExtendedReactions = function(e, id) {
-    e.stopPropagation();
-    const picker = document.getElementById(`picker-${id}`);
-    if (picker) picker.classList.toggle('expanded');
-  };
-
-  window.addReaction = function(chatId, msgId, emoji) {
-    const reactionRef = ref(db, `chats/${chatId}/messages/${msgId}/reactions/${emoji}/${userId}`);
-    set(reactionRef, true);
-    document.getElementById(`picker-${msgId}`).classList.remove('active');
-    
-    if (emoji === '❤️') {
-      const msgEl = document.getElementById(`msg-${msgId}`);
-      if (msgEl) {
-        const heart = document.createElement('div');
-        heart.className = 'floating-heart';
-        heart.textContent = '❤️';
-        msgEl.appendChild(heart);
-        setTimeout(() => heart.remove(), 600);
-      }
+  window.scrollToMessage = function(msgId) {
+    const target = document.getElementById(`msg-${msgId}`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('highlight');
+      setTimeout(() => target.classList.remove('highlight'), 1500);
+    } else {
+      showTgToast('Сообщение не найдено');
     }
   };
 
   window.toggleReaction = function(chatId, msgId, emoji) {
-    const userReactionRef = ref(db, `chats/${chatId}/messages/${msgId}/reactions/${emoji}/${userId}`);
-    get(userReactionRef).then((snapshot) => {
+    const reactionRef = ref(db, `chats/${chatId}/messages/${msgId}/reactions/${emoji}/${userId}`);
+    get(reactionRef).then((snapshot) => {
       if (snapshot.exists()) {
-        remove(userReactionRef);
+        remove(reactionRef);
       } else {
-        set(userReactionRef, true);
+        set(reactionRef, true);
       }
     });
   };
 
-  function handleMessageDblClick(chatId, id) {
-    addReaction(chatId, id, '❤️');
+  function openReactionPicker(chatId, msgId, e) {
+    e.preventDefault();
+    document.querySelectorAll('.reaction-picker').forEach(el => el.remove());
+    const msgEl = document.getElementById(`msg-${msgId}`);
+    if (!msgEl) return;
+
+    const picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+    picker.innerHTML = `
+      <div class="quick-emojis">
+        <span onclick="addQuickReaction('${chatId}', '${msgId}', '❤️')">❤️</span>
+        <span onclick="addQuickReaction('${chatId}', '${msgId}', '👍')">👍</span>
+        <span onclick="addQuickReaction('${chatId}', '${msgId}', '🔥')">🔥</span>
+        <span onclick="addQuickReaction('${chatId}', '${msgId}', '😂')">😂</span>
+        <span onclick="addQuickReaction('${chatId}', '${msgId}', '😢')">😢</span>
+        <button class="more-reactions-btn" onclick="toggleExtendedReactions(this)">
+          <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
+      </div>
+      <div class="extended-reactions-panel">
+        <div class="extended-grid">
+          ${['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','👍','👎','👏','🔥','💯','😂','💩','🎉','😍','😢','🙏','✨','😎','🤔','😴'].map(em => `<span onclick="addQuickReaction('${chatId}', '${msgId}', '${em}')">${em}</span>`).join('')}
+        </div>
+      </div>
+    `;
+
+    msgEl.style.position = 'relative';
+    msgEl.appendChild(picker);
+    setTimeout(() => picker.classList.add('active'), 10);
+
+    const closeListener = (ev) => {
+      if (!picker.contains(ev.target)) {
+        picker.remove();
+        document.removeEventListener('click', closeListener);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeListener), 100);
   }
+
+  window.addQuickReaction = function(chatId, msgId, emoji) {
+    const reactionRef = ref(db, `chats/${chatId}/messages/${msgId}/reactions/${emoji}/${userId}`);
+    set(reactionRef, true);
+    document.querySelectorAll('.reaction-picker').forEach(el => el.remove());
+  };
+
+  window.toggleExtendedReactions = function(btn) {
+    const picker = btn.closest('.reaction-picker');
+    picker.classList.toggle('expanded');
+  };
 </script>
+
 </body>
 </html>
