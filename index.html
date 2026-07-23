@@ -208,6 +208,7 @@
       width: 40px;
       height: 40px;
       flex-shrink: 0;
+      cursor: pointer;
     }
     .chat-header .avatar {
       width: 100%; height: 100%; background: var(--author-color); color: #fff; border-radius: 50%;
@@ -230,15 +231,137 @@
       display: block;
     }
 
-    .chat-header .title-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    .chat-header .title-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; cursor: pointer; }
     .chat-header .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chat-header .partner-bio { font-size: 11px; color: var(--subtitle-color); font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-header .partner-bio { display: none !important; }
     .chat-header .subtitle { font-size: 13px; color: var(--subtitle-color); font-weight: normal; display: none; }
     .chat-header .subtitle.active { display: block; }
     
     .header-actions { display: flex; align-items: center; gap: 10px; }
     .action-btn { cursor: pointer; font-size: 20px; padding: 5px; border-radius: 50%; user-select: none; transition: transform 0.15s ease; color: var(--subtitle-color); display: flex; align-items: center; justify-content: center;}
     .action-btn:hover { transform: scale(1.15); color: var(--text-color); }
+
+    /* Профиль пользователя (в стиле Telegram) */
+    .profile-modal {
+      position: absolute;
+      top: 0;
+      right: -100%;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-color);
+      z-index: 250;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      color: var(--text-color);
+    }
+    .profile-modal.active {
+      right: 0;
+    }
+    .profile-header {
+      padding: 15px 20px;
+      background: var(--header-bg);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 1px 3px var(--header-shadow);
+    }
+    .profile-back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--subtitle-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px;
+      border-radius: 50%;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .profile-back-btn:hover {
+      background: var(--modal-btn-hover);
+      color: var(--text-color);
+    }
+    .profile-back-btn svg { width: 22px; height: 22px; fill: currentColor; }
+    .profile-header-title { font-size: 18px; font-weight: 600; }
+
+    .profile-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 20px;
+    }
+    .profile-hero {
+      background: var(--header-bg);
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .profile-big-avatar {
+      width: 90px;
+      height: 90px;
+      background: var(--author-color);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      position: relative;
+    }
+    .profile-big-status-dot {
+      width: 16px;
+      height: 16px;
+      background-color: var(--online-color);
+      border: 3px solid var(--header-bg);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      display: none;
+    }
+    .profile-big-status-dot.online { display: block; }
+    
+    .profile-name { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .profile-status-text { font-size: 14px; color: var(--subtitle-color); }
+
+    .profile-section {
+      background: var(--header-bg);
+      padding: 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .profile-label { font-size: 12px; color: var(--subtitle-color); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .profile-value { font-size: 15px; color: var(--text-color); }
+    
+    .profile-actions-list {
+      background: var(--header-bg);
+      display: flex;
+      flex-direction: column;
+    }
+    .profile-action-btn {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-color);
+      text-align: left;
+      transition: background 0.2s ease;
+    }
+    .profile-action-btn:hover { background: var(--sidebar-hover); }
+    .profile-action-btn.danger { color: var(--danger-color); }
 
     /* Поиск по сообщениям */
     .search-bar-wrapper {
@@ -295,7 +418,6 @@
     .reply-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.85; }
     .message-text { white-space: pre-wrap; transition: background 0.3s ease; border-radius: 4px; }
     
-    /* Подсветка текста при поиске */
     .message-text.search-match { background: rgba(255, 235, 59, 0.3); }
 
     .message-meta { display: flex; align-items: center; justify-content: flex-end; gap: 5px; font-size: 11px; margin-top: 2px; align-self: flex-end; }
@@ -305,7 +427,6 @@
     .status-ticks { display: inline-flex; align-items: center; vertical-align: middle; width: 16px; height: 12px; }
     .status-ticks svg { width: 16px; height: 12px; fill: currentColor; }
 
-    /* Реакции, меню, модальные окна и т.д. */
     .message-reactions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
     .reaction-badge { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 10px; font-size: 12px; display: flex; align-items: center; gap: 3px; cursor: pointer; transition: transform 0.1s ease, background 0.15s ease; }
     .reaction-badge:hover { transform: scale(1.08); background: rgba(0, 0, 0, 0.3); }
@@ -495,15 +616,54 @@
     <div class="chats-list" id="chats-list"></div>
   </div>
 
+  <!-- Профиль пользователя в стиле Telegram -->
+  <div class="profile-modal" id="profile-modal">
+    <div class="profile-header">
+      <button class="profile-back-btn" id="profile-back-btn" title="Назад">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <div class="profile-header-title">Профиль</div>
+    </div>
+    <div class="profile-body">
+      <div class="profile-hero">
+        <div class="profile-big-avatar" id="profile-big-avatar">
+          💬
+          <div class="profile-big-status-dot" id="profile-big-status-dot"></div>
+        </div>
+        <div class="profile-name" id="profile-name">Имя</div>
+        <div class="profile-status-text" id="profile-status-text">был(а) недавно</div>
+      </div>
+      
+      <div class="profile-section">
+        <div class="profile-label">Юзернейм</div>
+        <div class="profile-value" id="profile-username">@username</div>
+      </div>
+
+      <div class="profile-section" id="profile-bio-section">
+        <div class="profile-label">О себе</div>
+        <div class="profile-value" id="profile-bio">Нет описания</div>
+      </div>
+
+      <div class="profile-actions-list" style="margin-top: 10px;">
+        <button class="profile-action-btn danger" id="block-user-btn" style="color: var(--danger-color);">
+          <span>🚫</span> Заблокировать
+        </button>
+        <button class="profile-action-btn danger" id="delete-chat-btn" style="color: var(--danger-color); border-top: 1px solid rgba(255,255,255,0.05);">
+          <span>🗑️</span> Удалить чат
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="chat-header">
     <div class="action-btn" id="menu-btn" title="Меню">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
     </div>
-    <div class="header-avatar-wrapper">
+    <div class="header-avatar-wrapper" id="open-profile-btn">
       <div class="avatar" id="header-avatar">💬</div>
       <div class="status-indicator" id="header-status-dot"></div>
     </div>
-    <div class="title-area">
+    <div class="title-area" id="open-profile-text-btn">
       <div class="title" id="header-title">Выберите чат</div>
       <div class="partner-bio" id="header-bio" style="display:none;"></div>
       <div class="subtitle" id="header-subtitle">печатает...</div>
@@ -568,6 +728,30 @@
       <div class="modal-buttons" style="margin-top: 15px;">
         <button class="modal-btn" id="settings-cancel-btn">Отмена</button>
         <button class="modal-btn" id="settings-save-btn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно подтверждения блокировки -->
+  <div class="modal-overlay" id="block-modal">
+    <div class="modal-box">
+      <div class="modal-title" id="block-modal-title">Заблокировать?</div>
+      <div class="modal-desc" id="block-modal-desc">Этот пользователь больше не сможет отправлять вам сообщения.</div>
+      <div class="modal-buttons" style="margin-top: 20px;">
+        <button class="modal-btn" id="block-cancel">Отмена</button>
+        <button class="modal-btn danger" id="block-confirm" style="color: var(--danger-color);">Заблокировать</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно подтверждения удаления чата -->
+  <div class="modal-overlay" id="delete-chat-modal">
+    <div class="modal-box">
+      <div class="modal-title">Удалить чат?</div>
+      <div class="modal-desc" id="delete-chat-desc">История сообщений будет удалена для обоих пользователей.</div>
+      <div class="modal-buttons" style="margin-top: 20px;">
+        <button class="modal-btn" id="delete-chat-cancel">Отмена</button>
+        <button class="modal-btn danger" id="delete-chat-confirm" style="color: var(--danger-color);">Удалить</button>
       </div>
     </div>
   </div>
@@ -697,6 +881,128 @@
   const headerAvatar = document.getElementById('header-avatar');
   const headerStatusDot = document.getElementById('header-status-dot');
   
+  // Элементы профиля пользователя (Telegram style)
+  const profileModal = document.getElementById('profile-modal');
+  const openProfileBtn = document.getElementById('open-profile-btn');
+  const openProfileTextBtn = document.getElementById('open-profile-text-btn');
+  const profileBackBtn = document.getElementById('profile-back-btn');
+  const profileBigAvatar = document.getElementById('profile-big-avatar');
+  const profileBigStatusDot = document.getElementById('profile-big-status-dot');
+  const profileName = document.getElementById('profile-name');
+  const profileStatusText = document.getElementById('profile-status-text');
+  const profileUsername = document.getElementById('profile-username');
+  const profileBio = document.getElementById('profile-bio');
+  const profileBioSection = document.getElementById('profile-bio-section');
+  const blockUserBtn = document.getElementById('block-user-btn');
+  const deleteChatBtn = document.getElementById('delete-chat-btn');
+  
+  const blockModal = document.getElementById('block-modal');
+  const blockModalTitle = document.getElementById('block-modal-title');
+  const blockModalDesc = document.getElementById('block-modal-desc');
+  const blockCancel = document.getElementById('block-cancel');
+  const blockConfirm = document.getElementById('block-confirm');
+
+  const deleteChatModal = document.getElementById('delete-chat-modal');
+  const deleteChatDesc = document.getElementById('delete-chat-desc');
+  const deleteChatCancel = document.getElementById('delete-chat-cancel');
+  const deleteChatConfirm = document.getElementById('delete-chat-confirm');
+
+  openProfileBtn.addEventListener('click', () => {
+    if (!currentPartner) return showTgToast('Сначала выберите чат!');
+    profileModal.classList.add('active');
+  });
+  openProfileTextBtn.addEventListener('click', () => {
+    if (!currentPartner) return;
+    profileModal.classList.add('active');
+  });
+  profileBackBtn.addEventListener('click', () => {
+    profileModal.classList.remove('active');
+  });
+
+  // Логика удаления чата (у обоих пользователей)
+  deleteChatBtn.addEventListener('click', () => {
+    if (!currentPartner || !currentChatId) return;
+    deleteChatDesc.innerHTML = `История сообщений с пользователем <strong>${currentPartner.name}</strong> будет удалена для обоих пользователей.`;
+    deleteChatModal.classList.add('active');
+  });
+
+  deleteChatCancel.addEventListener('click', () => {
+    deleteChatModal.classList.remove('active');
+  });
+
+  deleteChatConfirm.addEventListener('click', () => {
+    deleteChatModal.classList.remove('active');
+    profileModal.classList.remove('active');
+
+    if (currentChatId && currentPartner) {
+      const partnerUid = currentPartner.uid;
+      const chatId = currentChatId;
+
+      // Удаляем чат из списков обоих пользователей и саму ветку сообщений в базе
+      const updates = {};
+      updates[`user_chats/${userId}/${chatId}`] = null;
+      updates[`user_chats/${partnerUid}/${chatId}`] = null;
+      updates[`chats/${chatId}`] = null;
+
+      update(ref(db), updates).then(() => {
+        showTgToast('Чат успешно удален');
+        // Сбрасываем текущий открытый чат
+        currentChatId = null;
+        currentPartner = null;
+        if (partnerStatusUnsubscribe) partnerStatusUnsubscribe();
+
+        headerTitle.textContent = 'Выберите чат';
+        headerSubtitle.classList.remove('active');
+        headerAvatar.textContent = '💬';
+        headerStatusDot.classList.remove('online');
+        messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню, чтобы выбрать или создать личный чат.</div>';
+        chatInputWrapper.classList.remove('active');
+        input.disabled = true;
+        sendBtn.disabled = true;
+        searchBarWrapper.classList.remove('active');
+      }).catch(() => {
+        showTgToast('Ошибка при удалении чата');
+      });
+    }
+  });
+
+  blockUserBtn.addEventListener('click', () => {
+    if (!currentPartner) return;
+    const isBlocked = blockUserBtn.classList.contains('is-blocked');
+    if (isBlocked) {
+      blockModalTitle.textContent = `Разблокировать ${currentPartner.name}?`;
+      blockModalDesc.textContent = `${currentPartner.name} снова сможет отправлять вам сообщения.`;
+      blockConfirm.textContent = 'Разблокировать';
+      blockConfirm.style.color = 'var(--danger-color)';
+    } else {
+      blockModalTitle.textContent = 'Заблокировать?';
+      blockModalDesc.innerHTML = `<strong>${currentPartner.name}</strong> не сможет отправлять вам сообщения.`;
+      blockConfirm.textContent = 'Заблокировать';
+      blockConfirm.style.color = 'var(--danger-color)';
+    }
+    blockModal.classList.add('active');
+  });
+
+  blockCancel.addEventListener('click', () => {
+    blockModal.classList.remove('active');
+  });
+
+  blockConfirm.addEventListener('click', () => {
+    blockModal.classList.remove('active');
+    profileModal.classList.remove('active');
+    
+    const isBlocked = blockUserBtn.classList.contains('is-blocked');
+    if (isBlocked) {
+      blockUserBtn.classList.remove('is-blocked');
+      blockUserBtn.innerHTML = '<span>🚫</span> Заблокировать';
+      showTgToast('Пользователь разблокирован');
+    } else {
+      blockUserBtn.classList.add('is-blocked');
+      blockUserBtn.innerHTML = '<span>✔️</span> Разблокировать';
+      showTgToast('Пользователь заблокирован');
+    }
+  });
+
   const emojiBtn = document.getElementById('emoji-btn');
   const emojiMenu = document.getElementById('emoji-menu');
   const emojiGrid = document.getElementById('emoji-grid');
@@ -1051,9 +1357,21 @@
     set(ref(db, `user_chats/${partner.uid}/${currentChatId}`), { partnerId: userId, partnerName: username, partnerHandle: userHandle });
 
     headerTitle.textContent = partner.name;
-    if (partner.bio) { headerBio.style.display = 'block'; headerBio.textContent = partner.bio; } else { headerBio.style.display = 'none'; }
     headerAvatar.textContent = partner.name[0].toUpperCase();
     
+    profileBigAvatar.firstChild.nodeValue = partner.name[0].toUpperCase();
+    profileName.textContent = partner.name;
+    profileUsername.textContent = partner.username || '@username';
+    if (partner.bio) {
+      profileBio.textContent = partner.bio;
+      profileBioSection.style.display = 'flex';
+    } else {
+      profileBioSection.style.display = 'none';
+    }
+
+    blockUserBtn.classList.remove('is-blocked');
+    blockUserBtn.innerHTML = '<span>🚫</span> Заблокировать';
+
     chatInputWrapper.classList.add('active'); input.disabled = false; sendBtn.disabled = false;
     
     const displayNameForInput = partner.username ? partner.username.replace('@', '') : partner.name;
@@ -1079,15 +1397,22 @@
         const statusVal = snapshot.val();
         if (statusVal.state === 'online') {
           headerStatusDot.classList.add('online');
+          profileBigStatusDot.classList.add('online');
           headerSubtitle.textContent = 'в сети';
+          profileStatusText.textContent = 'в сети';
         } else {
           headerStatusDot.classList.remove('online');
-          headerSubtitle.textContent = formatLastSeen(statusVal.lastChanged);
+          profileBigStatusDot.classList.remove('online');
+          const lastSeenStr = formatLastSeen(statusVal.lastChanged);
+          headerSubtitle.textContent = lastSeenStr;
+          profileStatusText.textContent = lastSeenStr;
         }
         headerSubtitle.classList.add('active');
       } else {
         headerStatusDot.classList.remove('online');
+        profileBigStatusDot.classList.remove('online');
         headerSubtitle.textContent = 'был(а) недавно';
+        profileStatusText.textContent = 'был(а) недавно';
         headerSubtitle.classList.add('active');
       }
     });
@@ -1205,7 +1530,7 @@
         headerStatusDot.classList.remove('online');
         headerTitle.style.display = 'none'; headerBio.style.display = 'none'; headerSubtitle.classList.add('active'); headerSubtitle.textContent = 'печатает...';
       } else {
-        headerTitle.style.display = 'block'; if (currentPartner && currentPartner.bio) headerBio.style.display = 'block';
+        headerTitle.style.display = 'block'; 
         if (currentPartner) {
           get(ref(db, `status/${currentPartner.uid}`)).then((snap) => {
             if (snap.exists()) {
