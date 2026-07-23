@@ -114,45 +114,13 @@
       position: relative;
     }
 
-    .sidebar-user-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .sidebar-avatar-wrapper {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      overflow: hidden;
-      background: var(--author-color);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 20px;
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-    .sidebar-avatar-wrapper img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .sidebar-user-info {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .sidebar-user-name { font-weight: 600; font-size: 16px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-user-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
     
     .sidebar-handle-row {
       display: flex;
       align-items: center;
       gap: 6px;
+      margin-bottom: 4px;
     }
     .sidebar-user-handle { font-size: 13px; color: var(--subtitle-color); }
     .copy-handle-btn {
@@ -217,10 +185,7 @@
     }
     .chat-item .avatar {
       width: 100%; height: 100%; background: var(--author-color); color: #fff; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden;
-    }
-    .chat-item .avatar img {
-      width: 100%; height: 100%; object-fit: cover;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
     }
     .chat-item-info { flex: 1; overflow: hidden; }
     .chat-item-title { font-weight: 600; font-size: 15px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -247,10 +212,7 @@
     }
     .chat-header .avatar {
       width: 100%; height: 100%; background: var(--author-color); color: #fff; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; overflow: hidden;
-    }
-    .chat-header .avatar img {
-      width: 100%; height: 100%; object-fit: cover;
+      display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;
     }
     
     /* Индикатор сети (зеленая точка) */
@@ -352,12 +314,6 @@
       font-weight: 600;
       margin-bottom: 15px;
       position: relative;
-      overflow: hidden;
-    }
-    .profile-big-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
     }
     .profile-big-status-dot {
       width: 16px;
@@ -642,19 +598,12 @@
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-user-row">
-        <div class="sidebar-avatar-wrapper" id="sidebar-avatar-container">
-          <span id="sidebar-avatar-letter">И</span>
-        </div>
-        <div class="sidebar-user-info">
-          <div class="sidebar-user-name" id="sidebar-name">Имя</div>
-          <div class="sidebar-handle-row">
-            <div class="sidebar-user-handle" id="sidebar-handle">@username</div>
-            <button class="copy-handle-btn" id="copy-handle-btn" title="Копировать юзернейм">
-              <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-            </button>
-          </div>
-        </div>
+      <div class="sidebar-user-name" id="sidebar-name">Имя</div>
+      <div class="sidebar-handle-row">
+        <div class="sidebar-user-handle" id="sidebar-handle">@username</div>
+        <button class="copy-handle-btn" id="copy-handle-btn" title="Копировать юзернейм">
+          <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+        </button>
       </div>
       <div class="sidebar-user-bio" id="sidebar-bio">О себе не указано</div>
     </div>
@@ -678,7 +627,7 @@
     <div class="profile-body">
       <div class="profile-hero">
         <div class="profile-big-avatar" id="profile-big-avatar">
-          <span id="profile-big-avatar-letter">💬</span>
+          💬
           <div class="profile-big-status-dot" id="profile-big-status-dot"></div>
         </div>
         <div class="profile-name" id="profile-name">Имя</div>
@@ -711,7 +660,7 @@
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
     </div>
     <div class="header-avatar-wrapper" id="open-profile-btn">
-      <div class="avatar" id="header-avatar"><span id="header-avatar-letter">💬</span></div>
+      <div class="avatar" id="header-avatar">💬</div>
       <div class="status-indicator" id="header-status-dot"></div>
     </div>
     <div class="title-area" id="open-profile-text-btn">
@@ -759,22 +708,9 @@
   </div>
 
   <div class="modal-overlay" id="settings-modal">
-    <div class="modal-box" style="max-width: 360px;">
+    <div class="modal-box">
       <div class="modal-title">Настройки профиля</div>
       <div class="modal-desc">Измените свои персональные данные:</div>
-      
-      <!-- Выбор аватарки -->
-      <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; background: var(--input-bg); padding: 10px; border-radius: 10px;">
-        <div id="settings-avatar-preview" style="width: 50px; height: 50px; border-radius: 50%; background: var(--author-color); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; overflow: hidden; flex-shrink: 0;">
-          <span id="settings-avatar-letter">И</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
-          <label for="settings-avatar-input" style="font-size: 13px; font-weight: 600; color: var(--telegram-blue); cursor: pointer;">Изменить фото профиля</label>
-          <input type="file" id="settings-avatar-input" accept="image/*" style="display: none;">
-          <span style="font-size: 11px; color: var(--subtitle-color);">Фото будет сжато и сохранено в профиле</span>
-        </div>
-      </div>
-
       <label style="font-size: 12px; color: var(--subtitle-color);">Имя</label>
       <input type="text" class="modal-input" id="settings-name-input" placeholder="Имя">
       <label style="font-size: 12px; color: var(--subtitle-color);">Юзернейм</label>
@@ -900,40 +836,6 @@
     setTimeout(() => { toast.classList.remove('active'); }, 2500);
   }
 
-  function compressImage(file, maxWidth = 200, maxHeight = 200, quality = 0.7) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.onerror = (error) => reject(error);
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  }
-
   const themeBtn = document.getElementById('theme-btn');
   let currentTheme = localStorage.getItem('chat_theme') || 'dark';
   
@@ -977,15 +879,14 @@
   const headerBio = document.getElementById('header-bio');
   const headerSubtitle = document.getElementById('header-subtitle');
   const headerAvatar = document.getElementById('header-avatar');
-  const headerAvatarLetter = document.getElementById('header-avatar-letter');
   const headerStatusDot = document.getElementById('header-status-dot');
   
+  // Элементы профиля пользователя (Telegram style)
   const profileModal = document.getElementById('profile-modal');
   const openProfileBtn = document.getElementById('open-profile-btn');
   const openProfileTextBtn = document.getElementById('open-profile-text-btn');
   const profileBackBtn = document.getElementById('profile-back-btn');
   const profileBigAvatar = document.getElementById('profile-big-avatar');
-  const profileBigAvatarLetter = document.getElementById('profile-big-avatar-letter');
   const profileBigStatusDot = document.getElementById('profile-big-status-dot');
   const profileName = document.getElementById('profile-name');
   const profileStatusText = document.getElementById('profile-status-text');
@@ -1018,6 +919,7 @@
     profileModal.classList.remove('active');
   });
 
+  // Логика удаления чата (синхронно для обоих пользователей)
   deleteChatBtn.addEventListener('click', () => {
     if (!currentPartner || !currentChatId) return;
     deleteChatDesc.innerHTML = `История сообщений с пользователем <strong>${currentPartner.name}</strong> будет удалена для обоих пользователей.`;
@@ -1036,6 +938,7 @@
       const partnerUid = currentPartner.uid;
       const chatId = currentChatId;
 
+      // Полное удаление чата у обоих юзеров и удаление ветки сообщений
       const updates = {};
       updates[`user_chats/${userId}/${chatId}`] = null;
       updates[`user_chats/${partnerUid}/${chatId}`] = null;
@@ -1043,11 +946,28 @@
 
       update(ref(db), updates).then(() => {
         showTgToast('Чат успешно удален');
+        closeActiveChatUI();
       }).catch(() => {
         showTgToast('Ошибка при удалении чата');
       });
     }
   });
+
+  function closeActiveChatUI() {
+    currentChatId = null;
+    currentPartner = null;
+    if (partnerStatusUnsubscribe) partnerStatusUnsubscribe();
+
+    headerTitle.textContent = 'Выберите чат';
+    headerSubtitle.classList.remove('active');
+    headerAvatar.textContent = '💬';
+    headerStatusDot.classList.remove('online');
+    messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню, чтобы выбрать или создать личный чат.</div>';
+    chatInputWrapper.classList.remove('active');
+    input.disabled = true;
+    sendBtn.disabled = true;
+    searchBarWrapper.classList.remove('active');
+  }
 
   blockUserBtn.addEventListener('click', () => {
     if (!currentPartner) return;
@@ -1074,22 +994,15 @@
     blockModal.classList.remove('active');
     profileModal.classList.remove('active');
     
-    if (!userId || !currentPartner) return;
-    const blockRef = ref(db, `blocks/${userId}/${currentPartner.uid}`);
     const isBlocked = blockUserBtn.classList.contains('is-blocked');
-
     if (isBlocked) {
-      remove(blockRef).then(() => {
-        blockUserBtn.classList.remove('is-blocked');
-        blockUserBtn.innerHTML = '<span>🚫</span> Заблокировать';
-        showTgToast('Пользователь разблокирован');
-      }).catch(() => showTgToast('Ошибка при разблокировке'));
+      blockUserBtn.classList.remove('is-blocked');
+      blockUserBtn.innerHTML = '<span>🚫</span> Заблокировать';
+      showTgToast('Пользователь разблокирован');
     } else {
-      set(blockRef, true).then(() => {
-        blockUserBtn.classList.add('is-blocked');
-        blockUserBtn.innerHTML = '<span>✔️</span> Разблокировать';
-        showTgToast('Пользователь заблокирован');
-      }).catch(() => showTgToast('Ошибка при блокировке'));
+      blockUserBtn.classList.add('is-blocked');
+      blockUserBtn.innerHTML = '<span>✔️</span> Разблокировать';
+      showTgToast('Пользователь заблокирован');
     }
   });
 
@@ -1105,8 +1018,6 @@
   const sidebarHandle = document.getElementById('sidebar-handle');
   const copyHandleBtn = document.getElementById('copy-handle-btn');
   const sidebarBio = document.getElementById('sidebar-bio');
-  const sidebarAvatarContainer = document.getElementById('sidebar-avatar-container');
-  const sidebarAvatarLetter = document.getElementById('sidebar-avatar-letter');
   const chatsListDiv = document.getElementById('chats-list');
   const newChatInput = document.getElementById('new-chat-input');
   
@@ -1179,14 +1090,7 @@
     signOut(auth).then(() => {
       logoutModal.classList.remove('active');
       sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active');
-      currentChatId = null; currentPartner = null;
-      headerTitle.textContent = 'Выберите чат'; headerBio.style.display = 'none';
-      headerSubtitle.classList.remove('active'); headerAvatar.innerHTML = '<span id="header-avatar-letter">💬</span>';
-      headerStatusDot.classList.remove('online');
-      messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню, чтобы выбрать или создать личный чат.</div>';
-      chatInputWrapper.classList.remove('active');
-      input.disabled = true; sendBtn.disabled = true;
-      searchBarWrapper.classList.remove('active');
+      closeActiveChatUI();
     }).catch(() => showTgToast('Ошибка при выходе'));
   });
 
@@ -1199,12 +1103,10 @@
   const authSwitchBtn = document.getElementById('auth-switch-btn');
   
   let isRegisterMode = false;
-  let userId = null; let username = null; let userHandle = null; let userBio = null; let userAvatarUrl = null;
+  let userId = null; let username = null; let userHandle = null; let userBio = null;
   let currentChatId = null; let currentPartner = null;
   let partnerStatusUnsubscribe = null;
-  let blockStatusUnsubscribe = null;
-  let chatRemovedUnsubscribe = null;
-  let newAvatarBase64 = null;
+  let chatRemovedListener = null;
 
   authSwitchBtn.addEventListener('click', () => {
     isRegisterMode = !isRegisterMode;
@@ -1243,8 +1145,8 @@
       createUserWithEmailAndPassword(auth, fakeEmail, password)
         .then((userCredential) => {
           const user = userCredential.user;
-          set(ref(db, 'users/' + user.uid), { name: name, username: handle, login: login, bio: '', avatarUrl: '', uid: user.uid });
-          username = name; userHandle = handle; userBio = ''; userAvatarUrl = ''; userId = user.uid;
+          set(ref(db, 'users/' + user.uid), { name: name, username: handle, login: login, bio: '', uid: user.uid });
+          username = name; userHandle = handle; userBio = ''; userId = user.uid;
           initUserSession(); authModal.classList.remove('active'); setupPresence();
         })
         .catch((error) => {
@@ -1257,9 +1159,9 @@
           const user = userCredential.user; userId = user.uid;
           get(ref(db, 'users/' + user.uid)).then((snapshot) => {
             if (snapshot.exists()) {
-              const uData = snapshot.val(); username = uData.name; userHandle = uData.username || ('@' + login); userBio = uData.bio || ''; userAvatarUrl = uData.avatarUrl || '';
+              const uData = snapshot.val(); username = uData.name; userHandle = uData.username || ('@' + login); userBio = uData.bio || '';
             } else {
-              username = login; userHandle = '@' + login; userBio = ''; userAvatarUrl = '';
+              username = login; userHandle = '@' + login; userBio = '';
             }
             initUserSession(); authModal.classList.remove('active'); setupPresence();
           });
@@ -1272,15 +1174,14 @@
       userId = user.uid;
       get(ref(db, 'users/' + user.uid)).then((snapshot) => {
         if (snapshot.exists()) {
-          const uData = snapshot.val(); username = uData.name; userHandle = uData.username || ''; userBio = uData.bio || ''; userAvatarUrl = uData.avatarUrl || '';
+          const uData = snapshot.val(); username = uData.name; userHandle = uData.username || ''; userBio = uData.bio || '';
         } else {
-          username = "Пользователь"; userHandle = ''; userBio = ''; userAvatarUrl = '';
+          username = "Пользователь"; userHandle = ''; userBio = '';
         }
-        initUserSession(); authModal.classList.add('active');
-        authModal.classList.remove('active'); setupPresence();
+        initUserSession(); authModal.classList.remove('active'); setupPresence();
       });
     } else {
-      userId = null; username = null; userHandle = null; userBio = null; userAvatarUrl = null; authModal.classList.add('active');
+      userId = null; username = null; userHandle = null; userBio = null; authModal.classList.add('active');
     }
   });
 
@@ -1326,16 +1227,8 @@
   }
 
   function initUserSession() {
-    sidebarName.textContent = username; 
-    sidebarHandle.textContent = userHandle;
+    sidebarName.textContent = username; sidebarHandle.textContent = userHandle;
     sidebarBio.textContent = userBio ? `О себе: ${userBio}` : 'О себе не указано';
-    
-    if (userAvatarUrl) {
-      sidebarAvatarContainer.innerHTML = `<img src="${userAvatarUrl}" alt="Avatar">`;
-    } else {
-      sidebarAvatarContainer.innerHTML = `<span id="sidebar-avatar-letter">${username ? username[0].toUpperCase() : 'И'}</span>`;
-    }
-
     loadUserChats();
   }
 
@@ -1344,53 +1237,17 @@
   const settingsNameInput = document.getElementById('settings-name-input');
   const settingsUsernameInput = document.getElementById('settings-username-input');
   const settingsBioInput = document.getElementById('settings-bio-input');
-  const settingsAvatarInput = document.getElementById('settings-avatar-input');
-  const settingsAvatarPreview = document.getElementById('settings-avatar-preview');
   const settingsCancelBtn = document.getElementById('settings-cancel-btn');
   const settingsSaveBtn = document.getElementById('settings-save-btn');
 
   openSettingsBtn.addEventListener('click', () => {
-    settingsNameInput.value = username || ''; 
-    settingsUsernameInput.value = userHandle || ''; 
-    settingsBioInput.value = userBio || '';
-    newAvatarBase64 = null;
-
-    if (userAvatarUrl) {
-      settingsAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" style="width:100%; height:100%; object-fit:cover;">`;
-    } else {
-      settingsAvatarPreview.innerHTML = `<span id="settings-avatar-letter">${username ? username[0].toUpperCase() : 'И'}</span>`;
-    }
-
+    settingsNameInput.value = username || ''; settingsUsernameInput.value = userHandle || ''; settingsBioInput.value = userBio || '';
     settingsModal.classList.add('active');
   });
-
   settingsCancelBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
 
-  settingsAvatarInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      return showTgToast('Пожалуйста, выберите изображение!');
-    }
-    try {
-      showTgToast('Обработка изображения...');
-      newAvatarBase64 = await compressImage(file, 250, 250, 0.75);
-      settingsAvatarPreview.innerHTML = `<img src="${newAvatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
-      showTgToast('Фото готово к сохранению');
-    } catch (err) {
-      showTgToast('Ошибка загрузки изображения');
-    }
-  });
-
-  settingsAvatarPreview.onclick = () => {
-    settingsAvatarInput.click();
-  };
-
   settingsSaveBtn.addEventListener('click', () => {
-    const newName = settingsNameInput.value.trim(); 
-    let newHandle = settingsUsernameInput.value.trim(); 
-    const newBio = settingsBioInput.value.trim();
-    
+    const newName = settingsNameInput.value.trim(); let newHandle = settingsUsernameInput.value.trim(); const newBio = settingsBioInput.value.trim();
     if (!newName) return showTgToast('Имя не может быть пустым!');
     if (!newHandle) return showTgToast('Юзернейм не может быть пустым!');
     let checkHandle = newHandle.startsWith('@') ? newHandle.substring(1) : newHandle;
@@ -1407,29 +1264,17 @@
           });
         }
         if (exists) showTgToast('Этот юзернейм уже занят!');
-        else performProfileSave(newName, newHandle, newBio);
+        else saveProfileChanges(newName, newHandle, newBio);
       });
     } else {
-      performProfileSave(newName, newHandle, newBio);
+      saveProfileChanges(newName, newHandle, newBio);
     }
   });
 
-  function performProfileSave(newName, newHandle, newBio) {
-    const updateData = { name: newName, username: newHandle, bio: newBio };
-    if (newAvatarBase64 !== null) {
-      updateData.avatarUrl = newAvatarBase64;
-    }
-
-    update(ref(db, `users/${userId}`), updateData).then(() => {
-      username = newName; 
-      userHandle = newHandle; 
-      userBio = newBio;
-      if (newAvatarBase64 !== null) {
-        userAvatarUrl = newAvatarBase64;
-      }
-      initUserSession(); 
-      settingsModal.classList.remove('active'); 
-      showTgToast('Профиль обновлен!');
+  function saveProfileChanges(newName, newHandle, newBio) {
+    update(ref(db, `users/${userId}`), { name: newName, username: newHandle, bio: newBio }).then(() => {
+      username = newName; userHandle = newHandle; userBio = newBio;
+      initUserSession(); settingsModal.classList.remove('active'); showTgToast('Профиль обновлен!');
     });
   }
 
@@ -1460,63 +1305,60 @@
     onValue(ref(db, 'user_chats/' + userId), (snapshot) => {
       chatsListDiv.innerHTML = '';
       if (!snapshot.exists()) {
-        chatsListDiv.innerHTML = '<div style="padding: 15px; color: var(--subtitle-color); font-size: 13px;">Нет активных чатов. Найдите пользователя по @username выше.</div>';
-        return;
+        chatsListDiv.innerHTML = '<div style="padding: 15px; color: var(--subtitle-color); font-size: 13px; text-align: center;">Нет чатов.<br>Введите @username выше.</div>'; return;
       }
-      const chats = snapshot.val();
-      Object.keys(chats).forEach((chatId) => {
-        const chatData = chats[chatId];
-        const partnerUid = chatData.partnerUid;
+      snapshot.forEach((chatSnap) => {
+        const chatData = chatSnap.val(); const chatId = chatSnap.key;
+        const item = document.createElement('div'); item.className = 'chat-item';
+        item.innerHTML = `
+          <div class="avatar-wrapper">
+            <div class="avatar">${chatData.partnerName ? chatData.partnerName[0].toUpperCase() : '💬'}</div>
+            <div class="status-indicator" id="chat-item-dot-${chatData.partnerId}"></div>
+          </div>
+          <div class="chat-item-info">
+            <div class="chat-item-title">${chatData.partnerName}</div>
+            <div class="chat-item-subtitle">${chatData.partnerHandle || ''}</div>
+          </div>`;
         
-        get(ref(db, 'users/' + partnerUid)).then((userSnap) => {
-          if (!userSnap.exists()) return;
-          const partner = userSnap.val();
-
-          const chatItem = document.createElement('div');
-          chatItem.className = 'chat-item';
-          
-          let avatarHtml = '';
-          if (partner.avatarUrl) {
-            avatarHtml = `<img src="${partner.avatarUrl}" alt="Avatar">`;
-          } else {
-            avatarHtml = partner.name ? partner.name[0].toUpperCase() : '💬';
+        onValue(ref(db, `status/${chatData.partnerId}`), (statusSnap) => {
+          const dot = item.querySelector(`#chat-item-dot-${chatData.partnerId}`);
+          if (dot && statusSnap.exists()) {
+            const sVal = statusSnap.val();
+            if (sVal.state === 'online') {
+              dot.classList.add('online');
+            } else {
+              dot.classList.remove('online');
+            }
           }
-
-          chatItem.innerHTML = `
-            <div class="avatar-wrapper">
-              <div class="avatar">${avatarHtml}</div>
-            </div>
-            <div class="chat-item-info">
-              <div class="chat-item-title">${partner.name}</div>
-              <div class="chat-item-subtitle">${chatData.lastMessage || partner.username || 'Нет сообщений'}</div>
-            </div>
-          `;
-          chatItem.addEventListener('click', () => {
-            openChatWith({ uid: partnerUid, ...partner }, chatId);
-            sidebar.classList.remove('active');
-            sidebarOverlay.classList.remove('active');
-          });
-          chatsListDiv.appendChild(chatItem);
         });
+
+        item.onclick = () => {
+          get(ref(db, `users/${chatData.partnerId}`)).then((pSnap) => {
+            let partnerObj = { uid: chatData.partnerId, name: chatData.partnerName, username: chatData.partnerHandle };
+            if (pSnap.exists()) partnerObj = { uid: chatData.partnerId, ...pSnap.val() };
+            openChatWith(partnerObj, chatId); sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active');
+          });
+        };
+        chatsListDiv.appendChild(item);
       });
     });
   }
 
   function openChatWith(partner, existingChatId = null) {
     currentPartner = partner;
-    headerTitle.textContent = partner.name;
-    headerBio.textContent = partner.bio || '';
-    
-    if (partner.avatarUrl) {
-      headerAvatar.innerHTML = `<img src="${partner.avatarUrl}" alt="Avatar">`;
-      profileBigAvatar.innerHTML = `<img src="${partner.avatarUrl}" alt="Avatar"><div class="profile-big-status-dot" id="profile-big-status-dot"></div>`;
-    } else {
-      headerAvatar.innerHTML = `<span id="header-avatar-letter">${partner.name ? partner.name[0].toUpperCase() : '💬'}</span>`;
-      profileBigAvatar.innerHTML = `<span id="profile-big-avatar-letter">${partner.name ? partner.name[0].toUpperCase() : '💬'}</span><div class="profile-big-status-dot" id="profile-big-status-dot"></div>`;
-    }
+    if (!existingChatId) {
+      const ids = [userId, partner.uid].sort(); currentChatId = ids[0] + '_' + ids[1];
+    } else { currentChatId = existingChatId; }
 
+    set(ref(db, `user_chats/${userId}/${currentChatId}`), { partnerId: partner.uid, partnerName: partner.name, partnerHandle: partner.username });
+    set(ref(db, `user_chats/${partner.uid}/${currentChatId}`), { partnerId: userId, partnerName: username, partnerHandle: userHandle });
+
+    headerTitle.textContent = partner.name;
+    headerAvatar.textContent = partner.name[0].toUpperCase();
+    
+    profileBigAvatar.firstChild.nodeValue = partner.name[0].toUpperCase();
     profileName.textContent = partner.name;
-    profileUsername.textContent = partner.username || '@unknown';
+    profileUsername.textContent = partner.username || '@username';
     if (partner.bio) {
       profileBio.textContent = partner.bio;
       profileBioSection.style.display = 'flex';
@@ -1524,272 +1366,114 @@
       profileBioSection.style.display = 'none';
     }
 
-    if (partnerStatusUnsubscribe) partnerStatusUnsubscribe();
-    const partnerStatusRef = ref(db, `status/${partner.uid}`);
-    partnerStatusUnsubscribe = onValue(partnerStatusRef, (snap) => {
-      const statusData = snap.val();
-      const dot = document.getElementById('header-status-dot');
-      const bigDot = document.getElementById('profile-big-status-dot');
-      if (statusData && statusData.state === 'online') {
-        dot.classList.add('online');
-        if (bigDot) bigDot.classList.add('online');
-        profileStatusText.textContent = 'в сети';
-      } else {
-        dot.classList.remove('online');
-        if (bigDot) bigDot.classList.remove('online');
-        profileStatusText.textContent = formatLastSeen(statusData ? statusData.lastChanged : null);
+    blockUserBtn.classList.remove('is-blocked');
+    blockUserBtn.innerHTML = '<span>🚫</span> Заблокировать';
+
+    chatInputWrapper.classList.add('active'); input.disabled = false; sendBtn.disabled = false;
+    
+    const displayNameForInput = partner.username ? partner.username.replace('@', '') : partner.name;
+    input.placeholder = `Сообщение для ${displayNameForInput}...`;
+
+    loadMessagesForChat(currentChatId); 
+    watchTyping(currentChatId);
+    watchPartnerStatus(partner.uid);
+    watchCurrentChatRemoval(currentChatId);
+
+    searchBarWrapper.classList.remove('active'); msgSearchInput.value = '';
+  }
+
+  function watchCurrentChatRemoval(chatId) {
+    if (chatRemovedListener) chatRemovedListener();
+    
+    const myChatRef = ref(db, `user_chats/${userId}/${chatId}`);
+    chatRemovedListener = onValue(myChatRef, (snapshot) => {
+      if (!snapshot.exists() && currentChatId === chatId) {
+        closeActiveChatUI();
       }
     });
+  }
 
-    if (blockStatusUnsubscribe) blockStatusUnsubscribe();
-    blockStatusUnsubscribe = onValue(ref(db, `blocks/${userId}/${partner.uid}`), (snap) => {
-      if (snap.exists()) {
-        blockUserBtn.classList.add('is-blocked');
-        blockUserBtn.innerHTML = '<span>✔️</span> Разблокировать';
-      } else {
-        blockUserBtn.classList.remove('is-blocked');
-        blockUserBtn.innerHTML = '<span>🚫</span> Заблокировать';
-      }
-    });
-
-    if (chatRemovedUnsubscribe) chatRemovedUnsubscribe();
-
-    if (existingChatId) {
-      currentChatId = existingChatId;
-      setupChatListeners();
-    } else {
-      const possibleChatId1 = `${userId}_${partner.uid}`;
-      const possibleChatId2 = `${partner.uid}_${userId}`;
+  function watchPartnerStatus(partnerUid) {
+    if (partnerStatusUnsubscribe) {
+      partnerStatusUnsubscribe();
+    }
+    const partnerStatusRef = ref(db, `status/${partnerUid}`);
+    
+    const listener = onValue(partnerStatusRef, (snapshot) => {
+      if (!currentPartner || currentPartner.uid !== partnerUid) return;
       
-      get(ref(db, `user_chats/${userId}/${possibleChatId1}`)).then((snap1) => {
-        if (snap1.exists()) {
-          currentChatId = possibleChatId1;
-          setupChatListeners();
+      if (snapshot.exists()) {
+        const statusVal = snapshot.val();
+        if (statusVal.state === 'online') {
+          headerStatusDot.classList.add('online');
+          profileBigStatusDot.classList.add('online');
+          headerSubtitle.textContent = 'в сети';
+          profileStatusText.textContent = 'в сети';
         } else {
-          get(ref(db, `user_chats/${userId}/${possibleChatId2}`)).then((snap2) => {
-            if (snap2.exists()) {
-              currentChatId = possibleChatId2;
-              setupChatListeners();
-            } else {
-              currentChatId = possibleChatId1;
-              const updates = {};
-              updates[`user_chats/${userId}/${currentChatId}`] = { partnerUid: partner.uid, lastMessage: '' };
-              updates[`user_chats/${partner.uid}/${currentChatId}`] = { partnerUid: userId, lastMessage: '' };
-              update(ref(db), updates).then(() => {
-                setupChatListeners();
-              });
-            }
-          });
+          headerStatusDot.classList.remove('online');
+          profileBigStatusDot.classList.remove('online');
+          const lastSeenStr = formatLastSeen(statusVal.lastChanged);
+          headerSubtitle.textContent = lastSeenStr;
+          profileStatusText.textContent = lastSeenStr;
         }
-      });
-    }
-  }
-
-  function setupChatListeners() {
-    messagesDiv.innerHTML = '';
-    chatInputWrapper.classList.add('active');
-    input.disabled = false;
-    sendBtn.disabled = false;
-
-    // Синхронизация удаления чата в реальном времени для обеих сторон
-    chatRemovedUnsubscribe = onValue(ref(db, `user_chats/${userId}/${currentChatId}`), (snapshot) => {
-      if (!snapshot.exists() && currentChatId) {
-        currentChatId = null;
-        currentPartner = null;
-        if (partnerStatusUnsubscribe) partnerStatusUnsubscribe();
-        if (blockStatusUnsubscribe) blockStatusUnsubscribe();
-
-        headerTitle.textContent = 'Выберите чат';
-        headerBio.style.display = 'none';
-        headerSubtitle.classList.remove('active');
-        headerAvatar.innerHTML = '<span id="header-avatar-letter">💬</span>';
+        headerSubtitle.classList.add('active');
+      } else {
         headerStatusDot.classList.remove('online');
-        messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню, чтобы выбрать или создать личный чат.</div>';
-        chatInputWrapper.classList.remove('active');
-        input.disabled = true;
-        sendBtn.disabled = true;
-        searchBarWrapper.classList.remove('active');
-        profileModal.classList.remove('active');
+        profileBigStatusDot.classList.remove('online');
+        headerSubtitle.textContent = 'был(а) недавно';
+        profileStatusText.textContent = 'был(а) недавно';
+        headerSubtitle.classList.add('active');
       }
     });
-
-    const messagesRef = ref(db, `chats/${currentChatId}/messages`);
-    onChildAdded(messagesRef, (snapshot) => {
-      const msgData = snapshot.val();
-      appendMessage(snapshot.key, msgData);
-    });
-
-    onChildRemoved(messagesRef, (snapshot) => {
-      const msgEl = document.getElementById(`msg-${snapshot.key}`);
-      if (msgEl) {
-        msgEl.classList.add('removing');
-        setTimeout(() => msgEl.remove(), 300);
-      }
-    });
-
-    onChildChanged(messagesRef, (snapshot) => {
-      const msgKey = snapshot.key;
-      const msgData = snapshot.val();
-      const msgEl = document.getElementById(`msg-${msgKey}`);
-      if (msgEl) {
-        const textEl = msgEl.querySelector('.message-text');
-        if (textEl) textEl.textContent = msgData.text;
-        
-        let metaEl = msgEl.querySelector('.message-meta');
-        if (metaEl) {
-          let editedMark = metaEl.querySelector('.edited-mark');
-          if (!editedMark && msgData.edited) {
-            const markSpan = document.createElement('span');
-            markSpan.className = 'edited-mark';
-            markSpan.textContent = 'изменено';
-            metaEl.insertBefore(markSpan, metaEl.firstChild);
-          }
-        }
-
-        let reactionsContainer = msgEl.querySelector('.message-reactions');
-        if (!reactionsContainer) {
-          reactionsContainer = document.createElement('div');
-          reactionsContainer.className = 'message-reactions';
-          msgEl.appendChild(reactionsContainer);
-        }
-        reactionsContainer.innerHTML = '';
-        if (msgData.reactions) {
-          Object.keys(msgData.reactions).forEach(emoji => {
-            const count = Object.keys(msgData.reactions[emoji]).length;
-            const badge = document.createElement('div');
-            badge.className = 'reaction-badge';
-            badge.innerHTML = `<span>${emoji}</span><span>${count}</span>`;
-            reactionsContainer.appendChild(badge);
-          });
-        }
-      }
-    });
-  }
-
-  function appendMessage(msgId, data) {
-    if (document.getElementById(`msg-${msgId}`)) return;
-
-    const isMyMessage = data.sender === userId;
-    const msgDiv = document.createElement('div');
-    msgDiv.id = `msg-${msgId}`;
-    msgDiv.className = `message ${isMyMessage ? 'my' : 'other'}`;
-
-    let replyHtml = '';
-    if (data.replyTo) {
-      replyHtml = `
-        <div class="message-reply">
-          <div class="reply-author">${data.replyTo.authorName}</div>
-          <div class="reply-text">${data.replyTo.text}</div>
-        </div>
-      `;
-    }
-
-    let reactionsHtml = '';
-    if (data.reactions) {
-      reactionsHtml = '<div class="message-reactions">';
-      Object.keys(data.reactions).forEach(emoji => {
-        const count = Object.keys(data.reactions[emoji]).length;
-        reactionsHtml += `<div class="reaction-badge"><span>${emoji}</span><span>${count}</span></div>`;
-      });
-      reactionsHtml += '</div>';
-    }
-
-    let editedSpan = data.edited ? '<span class="edited-mark">изменено</span>' : '';
-
-    msgDiv.innerHTML = `
-      ${replyHtml}
-      <div class="message-text">${data.text}</div>
-      ${reactionsHtml}
-      <div class="message-meta">
-        ${editedSpan}
-        <span class="message-time">${data.time || ''}</span>
-      </div>
-    `;
-
-    messagesDiv.appendChild(msgDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  }
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = input.value.trim();
-    if (!text || !currentChatId || !currentPartner) return;
-
-    const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-
-    const newMessageRef = push(ref(db, `chats/${currentChatId}/messages`));
-    const messageData = {
-      sender: userId,
-      text: text,
-      time: timeStr,
-      timestamp: serverTimestamp()
+    
+    partnerStatusUnsubscribe = () => {
+      listener();
     };
+  }
 
-    set(newMessageRef, messageData).then(() => {
-      input.value = '';
-      input.style.height = 'auto';
-
-      const updates = {};
-      updates[`user_chats/${userId}/${currentChatId}/lastMessage`] = text;
-      updates[`user_chats/${currentPartner.uid}/${currentChatId}/lastMessage`] = text;
-      update(ref(db), updates);
+  function loadMessagesForChat(chatId) {
+    messagesDiv.innerHTML = '';
+    const chatMessagesRef = ref(db, `chats/${chatId}/messages`);
+    onChildAdded(chatMessagesRef, (snapshot) => {
+      const data = snapshot.val(); const id = snapshot.key;
+      const msgEl = document.createElement('div'); const isMy = data.userId === userId;
+      msgEl.className = `message ${isMy ? 'my' : 'other'}`; msgEl.id = `msg-${id}`; 
+      msgEl.innerHTML = buildMessageHTML(chatId, id, data);
+      msgEl.addEventListener('dblclick', () => handleMessageDblClick(chatId, id));
+      msgEl.addEventListener('contextmenu', (e) => openReactionPicker(chatId, id, e));
+      let pressTimer;
+      msgEl.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { openReactionPicker(chatId, id, e); }, 500); });
+      msgEl.addEventListener('touchend', () => clearTimeout(pressTimer));
+      msgEl.addEventListener('touchmove', () => clearTimeout(pressTimer));
+      messagesDiv.appendChild(msgEl); messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
-  });
-
-  input.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = (this.scrollHeight) + 'px';
-  });
-
-  const emojisData = {
-    smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','ológica','😴','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','hot','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'],
-    gestures: ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪'],
-    hearts: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝','100','💬','👁️‍🗨️','🗨️','🗯️','💭','💤'],
-    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🐢','🐍','🦎','🐙','🦑','🦞','🦀','虾','🦐','🦪','🐠','🐟','🐬','🐳','🐋','🦈','鳄','🐊','🐅','🐆','🦓','🦍'],
-    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🌽','🥕','🫒','蒜','🧄','🧅','🥔','🍠','🥐','🍞','🥖','🥨','🧀','🥚','🍳','バター','🥞','waffle','🥓','🥩','🍗','🍖','🦴','hotdog','burger','fries','pizza','sandwich','stew','bento','rice','curry','lo mein','spaghetti','oden','sushi','fried shrimp','fish cake','dango','dumpling','fortune cookie','takeout box','soft ice cream','shaved ice','ice cream','doughnut','cookie','birthday cake','shortcake','cupcake','pie','chocolate bar','candy','lollipop','custard','honeypot','baby bottle','glass of milk','tea','sake','beer','clinking beer mugs','wine glass','cocktail glass','tropical drink','bottle with popping cork','champagne','ice cube','chopsticks','plate with cutlery','fork and knife','spoon','jar'],
-    activities: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','rugby','flying disc','🎱','🪀','ping pong','badminton','hockey','field hockey','lacrosse','cricket','flag','golf','archery','fishing','diving','boxing','martial arts','skateboarding','sled','ice skate','curling','skis','snowboard','wrestling','gymnastics','weightlifting','bicycling','mountain biking','cartwheel','surfing','swimming','basketball','volleyball','trophy','medal','first place medal','second place medal','third place medal'],
-    objects: ['⌚','📱','📲','💻','keyboard','desktop computer','printer','computer mouse','trackball','joystick','compression','minidisc','floppy disk','optical disc','DVD','abacus','camera','flash','video camera','film projector','film frames','telephone receiver','pager','fax machine','television','radio','studio microphone','level slider','control knobs','stopwatch','timer','alarm clock','hourglass','hourglass with flowing sand','satellite antenna','battery','electric plug','bulb','flashlight','candle','diya lamp','named book','books','open book','notebook','ledger','page with curl','scroll','page facing up','newspaper','rolled-up newspaper','bookmark tabs','bookmark','label','money bag','yen banknote','dollar banknote','euro banknote','pound banknote','money with wings','credit card','receipt','chart decreasing','chart increasing','bar chart','envelope','incoming envelope','e-mail','package','mailbox with mail','mailbox','postbox','postal horn','newspaper','document','page with curl','folder','open folder','card index dividers','package','closed mailbox with lowered flag','closed mailbox with raised flag','open mailbox with raised flag','open mailbox with lowered flag','postbox','ballot box','pencil','fountain pen','pen','paintbrush','crayon','memo','briefcase','file folder','open file folder','card index dividers','calendar','spiral notepad','spiral calendar','card file','wastebasket','clipboard','pushpin','round pushpin','paperclip','linked paperclips','straight ruler','triangular ruler','scissors','lock','unlock','lock with ink pen','closed lock with key','key','old key','hammer','axe','pick','hammer and pick','hammer and wrench','dagger','crossed swords','pistol','boomerang','bow and arrow','shield','carpentry saw','wrench','screwdriver','nut and bolt','gear','clamp','balance scale','white cane','link','chains','hook','toolbox','magnet','ladder','test tube','petri dish','dna','microscope','telescope','satellite','syringe','drop of blood','pill','adhesive bandage','stethoscope','door','elevator','mirror','window','bed','couch and lamp','chair','toilet','plunger','shower','bathtub','mouse trap','bucket','soap','toothbrush','sponge','lotion bottle','safety pin','broom','basket','roll of paper','bucket','soap','toothbrush','sponge'],
-    travel: ['🚗','タクシー','🚙','バス','トロリーバス','レースカー','パトカー','救急車','消防車','ミニバス','トラック','小型トラック','トラクター','キックスケーター','自転車','スクーター','オートバイ','超特急','高速鉄道','鉄道車両','機関車','鉄道','地下鉄','路面電車','新幹線','列車','駅','飛行機','小型飛行機','旅客機','ヘリコプター','空飛ぶ円盤','ヨット','帆船','スピードボート','フェリー','客船','ボート','カヌー','ロケット','宇宙船','灯台','観覧車','ジェットコースター','メリーゴーラウンド','土管','温泉','建築物','ビル','オフィスビル','郵便局','病院','銀行','ホテル','コンビニ','学校','教会','モスク','シナゴーグ','カバ','神社','墓地','ヘッドストーン','モニュメント','市役所','城','お城','スタジアム','デパート','サーカスのテント','蒸気機関車','噴水','テント','フォグ','夜景','日の出','夕日','虹','橋','温泉マーク','火山','星降る夜','天の川','宇宙','流れ星','花火','スパークラー','花火','夕暮れ','街並み','夜景','高層ビル','富士山','東京タワー','自由の女神','エッフェル塔','ピラミッド'],
-    symbols: ['❤️','💯','✨','🔥','⭐','🌟','💫','💥','💢','💦','💨','🕳️','💬','👁️‍🗨️','🗨️','🗯️','💭','💤','🏁','🚩','🎌','🏴','🏳️','🏳️‍🌈','🏳️‍⚧️','🏴‍☠️','keycap: 0','keycap: 1','keycap: 2','keycap: 3','keycap: 4','keycap: 5','keycap: 6','keycap: 7','keycap: 8','keycap: 9','keycap: *','keycap: #','information','abc','capital abc','abcd','capital abcd','1234','symbols','musical note','musical notes','dizzy','infinity','heavy dollar sign','trade mark','copyright','registered','curly loop','double curly loop','part alternation mark','cyclone','infinity','cross mark','check mark','heavy check mark','curly loop','wavy dash','part alternation mark','recycle','fleur-de-lis','trident emblem','name badge','beginner','hollow red circle','check box with check','check box with x','radio button','black circle','white circle','square','triangle','diamond','lozenge','circle','red square','orange square','yellow square','green square','blue square','purple square','brown square','black large square','white large square','large orange diamond','large blue diamond','small orange diamond','small blue diamond','red circle','orange circle','yellow circle','green circle','blue circle','purple circle','brown circle','black circle','white circle','red triangle pointed up','red triangle pointed down','diamond with a dot','radio button','fast up button','fast down button','fast reverse button','rewind button','play button','fast forward button','play or pause button','cinema','bright button','dim button','UP! button','COOL button','NEW button','FREE button','NG button','OK button','UP! button','SOS button','ID button','VS button','ABC button','ABC button','AB button','CL button','SOS button','SECRET button','CONGRATULATIONS button','SECRET button']
-  };
-
-  function renderEmojis(category) {
-    emojiGrid.innerHTML = '';
-    const list = emojisData[category] || emojisData['smileys'];
-    list.forEach(emoji => {
-      const span = document.createElement('span');
-      span.textContent = emoji;
-      span.onclick = () => {
-        input.value += emoji;
-        input.focus();
-        input.style.height = 'auto';
-        input.style.height = (input.scrollHeight) + 'px';
-      };
-      emojiGrid.appendChild(span);
+    onChildChanged(chatMessagesRef, (snapshot) => {
+      const data = snapshot.val(); const id = snapshot.key;
+      const msgEl = document.getElementById(`msg-${id}`);
+      if (msgEl) msgEl.innerHTML = buildMessageHTML(chatId, id, data);
+    });
+    onChildRemoved(chatMessagesRef, (snapshot) => {
+      const id = snapshot.key; const msgEl = document.getElementById(`msg-${id}`);
+      if (msgEl) {
+        if (!msgEl.classList.contains('removing')) { msgEl.classList.add('removing'); setTimeout(() => msgEl.remove(), 280); }
+        else { msgEl.remove(); }
+      }
     });
   }
 
-  renderEmojis('smileys');
+  // Вспомогательные функции рендеринга сообщений и интерфейса
+  function buildMessageHTML(chatId, id, data) {
+    return `<div class="message-text">${escapeHtml(data.text)}</div>`;
+  }
 
-  emojiTabs.querySelectorAll('span').forEach(tab => {
-    tab.onclick = () => {
-      emojiTabs.querySelectorAll('span').forEach(s => s.classList.remove('active'));
-      tab.classList.add('active');
-      renderEmojis(tab.getAttribute('data-category'));
-    };
-  });
+  function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+  }
 
-  emojiBtn.onclick = (e) => {
-    e.stopPropagation();
-    emojiMenu.classList.toggle('active');
-  };
-
-  document.addEventListener('click', (e) => {
-    if (!emojiMenu.contains(e.target) && e.target !== emojiBtn) {
-      emojiMenu.classList.remove('active');
-    }
-  });
+  function handleMessageDblClick(chatId, id) {}
+  function openReactionPicker(chatId, id, e) { e.preventDefault(); }
+  function watchTyping(chatId) {}
 </script>
 </body>
 </html>
