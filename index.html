@@ -152,6 +152,10 @@
       background: var(--sidebar-hover);
     }
 
+    .sidebar-btn.danger {
+      color: var(--danger-color);
+    }
+
     .sidebar-search {
       padding: 12px 15px;
     }
@@ -334,6 +338,8 @@
     /* Облачко сообщения и анимации */
     .message { 
       max-width: 85%; 
+      width: fit-content;
+      min-width: 70px;
       padding: 6px 12px; 
       border-radius: 12px; 
       font-size: 15px; 
@@ -456,6 +462,7 @@
       gap: 5px;
       font-size: 11px; 
       margin-top: 2px;
+      align-self: flex-end;
     }
 
     .message.my .message-meta { color: var(--meta-my); }
@@ -926,9 +933,13 @@
 
     .chat-input-wrapper {
       background: var(--header-bg);
-      display: flex;
+      display: none; /* Скрыто по умолчанию для нулевого экрана */
       flex-direction: column;
       position: relative;
+    }
+
+    .chat-input-wrapper.active {
+      display: flex; /* Показывается при выборе чата */
     }
 
     /* Меню эмодзи */
@@ -1179,9 +1190,26 @@
       <label style="font-size: 12px; color: var(--subtitle-color);">О себе (Описание)</label>
       <textarea class="modal-input" id="settings-bio-input" placeholder="Напишите пару слов о себе..."></textarea>
       
-      <div class="modal-buttons">
+      <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+        <div class="sidebar-btn danger" id="logout-btn" style="padding: 10px 0; border-radius: 8px; justify-content: center; background: rgba(229,57,53,0.1); cursor: pointer;">
+          <span>🚪</span> Выйти из аккаунта
+        </div>
+      </div>
+
+      <div class="modal-buttons" style="margin-top: 15px;">
         <button class="modal-btn" id="settings-cancel-btn">Отмена</button>
         <button class="modal-btn" id="settings-save-btn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно подтверждения выхода из аккаунта -->
+  <div class="modal-overlay" id="logout-modal">
+    <div class="modal-box">
+      <div class="modal-title">Вы действительно хотите выйти?</div>
+      <div class="modal-buttons" style="margin-top: 20px;">
+        <button class="modal-btn" id="logout-cancel">Отмена</button>
+        <button class="modal-btn danger" id="logout-confirm">Выйти</button>
       </div>
     </div>
   </div>
@@ -1198,7 +1226,7 @@
     </div>
   </div>
   
-  <div class="chat-input-wrapper">
+  <div class="chat-input-wrapper" id="chat-input-wrapper">
     <!-- Выпадающее меню эмодзи -->
     <div class="emoji-picker-menu" id="emoji-menu">
       <div class="emoji-tabs" id="emoji-tabs">
@@ -1245,7 +1273,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, get, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const themeBtn = document.getElementById('theme-btn');
   let currentTheme = localStorage.getItem('chat_theme') || 'dark';
@@ -1285,6 +1313,7 @@
   const form = document.getElementById('chat-form');
   const input = document.getElementById('message-input');
   const sendBtn = document.getElementById('send-btn');
+  const chatInputWrapper = document.getElementById('chat-input-wrapper');
   const headerTitle = document.getElementById('header-title');
   const headerBio = document.getElementById('header-bio');
   const headerSubtitle = document.getElementById('header-subtitle');
@@ -1304,15 +1333,12 @@
   const sidebarBio = document.getElementById('sidebar-bio');
   const chatsListDiv = document.getElementById('chats-list');
   const newChatInput = document.getElementById('new-chat-input');
-
-  // Элементы модального окна настроек
-  const openSettingsBtn = document.getElementById('open-settings-btn');
-  const settingsModal = document.getElementById('settings-modal');
-  const settingsNameInput = document.getElementById('settings-name-input');
-  const settingsUsernameInput = document.getElementById('settings-username-input');
-  const settingsBioInput = document.getElementById('settings-bio-input');
-  const settingsCancelBtn = document.getElementById('settings-cancel-btn');
-  const settingsSaveBtn = document.getElementById('settings-save-btn');
+  
+  // Кнопка выхода из аккаунта и модальное окно
+  const logoutBtn = document.getElementById('logout-btn');
+  const logoutModal = document.getElementById('logout-modal');
+  const logoutCancel = document.getElementById('logout-cancel');
+  const logoutConfirm = document.getElementById('logout-confirm');
 
   menuBtn.addEventListener('click', () => {
     sidebar.classList.add('active');
@@ -1322,6 +1348,42 @@
   sidebarOverlay.addEventListener('click', () => {
     sidebar.classList.remove('active');
     sidebarOverlay.classList.remove('active');
+  });
+
+  // Логика кастомного модального окна выхода из аккаунта
+  logoutBtn.addEventListener('click', () => {
+    settingsModal.classList.remove('active');
+    logoutModal.classList.add('active');
+  });
+
+  logoutCancel.addEventListener('click', () => {
+    logoutModal.classList.remove('active');
+  });
+
+  logoutModal.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      logoutModal.classList.remove('active');
+    }
+  });
+
+  logoutConfirm.addEventListener('click', () => {
+    signOut(auth).then(() => {
+      logoutModal.classList.remove('active');
+      sidebar.classList.remove('active');
+      sidebarOverlay.classList.remove('active');
+      currentChatId = null;
+      currentPartner = null;
+      headerTitle.textContent = 'Выберите чат';
+      headerBio.style.display = 'none';
+      headerSubtitle.classList.remove('active');
+      headerAvatar.textContent = '💬';
+      messagesDiv.innerHTML = '<div style="text-align: center; color: var(--subtitle-color); margin-top: 40px;">Нажмите на меню (☰), чтобы выбрать или создать личный чат.</div>';
+      chatInputWrapper.classList.remove('active');
+      input.disabled = true;
+      sendBtn.disabled = true;
+    }).catch((error) => {
+      alert('Ошибка при выходе из аккаунта: ' + error.message);
+    });
   });
 
   // Авторизация
@@ -1479,6 +1541,14 @@
   }
 
   // Настройки профиля
+  const openSettingsBtn = document.getElementById('open-settings-btn');
+  const settingsModal = document.getElementById('settings-modal');
+  const settingsNameInput = document.getElementById('settings-name-input');
+  const settingsUsernameInput = document.getElementById('settings-username-input');
+  const settingsBioInput = document.getElementById('settings-bio-input');
+  const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+  const settingsSaveBtn = document.getElementById('settings-save-btn');
+
   openSettingsBtn.addEventListener('click', () => {
     settingsNameInput.value = username || '';
     settingsUsernameInput.value = userHandle || '';
@@ -1507,7 +1577,6 @@
       newHandle = '@' + newHandle;
     }
 
-    // Проверка уникальности юзернейма, если он изменился
     if (newHandle.toLowerCase() !== userHandle.toLowerCase()) {
       get(ref(db, 'users')).then((snapshot) => {
         let exists = false;
@@ -1546,7 +1615,6 @@
     });
   }
 
-  // Поиск и добавление пользователей по юзернейму для создания приватного чата
   newChatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       let query = newChatInput.value.trim().toLowerCase();
@@ -1558,7 +1626,6 @@
         return;
       }
 
-      // Ищем пользователя в базе по username
       get(ref(db, 'users')).then((snapshot) => {
         if (snapshot.exists()) {
           let foundUser = null;
@@ -1582,7 +1649,6 @@
     }
   });
 
-  // Загрузка списка чатов текущего пользователя
   function loadUserChats() {
     onValue(ref(db, 'user_chats/' + userId), (snapshot) => {
       chatsListDiv.innerHTML = '';
@@ -1605,7 +1671,6 @@
           </div>
         `;
         item.onclick = () => {
-          // Получим актуальные данные о собеседнике
           get(ref(db, `users/${chatData.partnerId}`)).then((pSnap) => {
             let partnerObj = { uid: chatData.partnerId, name: chatData.partnerName, username: chatData.partnerHandle };
             if (pSnap.exists()) {
@@ -1621,7 +1686,6 @@
     });
   }
 
-  // Открыть конкретный чат с пользователем
   function openChatWith(partner, existingChatId = null) {
     currentPartner = partner;
     
@@ -1653,6 +1717,8 @@
     }
 
     headerAvatar.textContent = partner.name[0].toUpperCase();
+    
+    chatInputWrapper.classList.add('active');
     input.disabled = false;
     sendBtn.disabled = false;
     input.placeholder = `Сообщение для ${partner.name}...`;
@@ -1718,9 +1784,9 @@
     smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
     gestures: ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','👣','👂','🦻','鼻','脑','牙','骨','👀','👁️','舌','嘴','💋','🩸','👶','👧','🧒','👦','👩','🧑','👨','👵','🧓','👴','👲','👳‍♀️','👳‍♂️','🧕','👮‍♀️','👮‍♂️','👷‍♀️','👷‍♂️','💂‍♀️','💂‍♂️','🕵️‍♀️','🕵️‍♂️','👩‍⚕️','👨‍⚕️','👩‍🌾','👨‍🌾','👩‍🍳','👨‍🍳','👩‍🎓','👨‍🎓','👩‍🎤','👨‍🎤','👩‍🏫','👨‍🏫','👩‍🏭','👨‍🏭','👩‍💻','👨‍💻','👩‍💼','👨‍💼','👩‍🔧','👨‍🔧','👩‍🔬','👨‍🔬','👩‍🎨','👨‍🎨','👩‍🚒','👨‍🚒','👩‍✈️','👨‍✈️','👩‍🚀','👨‍🚀','👩‍⚖️','👨‍⚖️','👰','🤵','👸','🤴','🦸‍♀️','🦸‍♂️','🦹‍♀️','🦹‍♂️','🤶','🎅','🧙‍♀️','🧙‍♂️','🧚‍♀️','🧚‍♂️','雕','雕','🧜‍♀️','🧜‍♂️','🧝‍♀️','🧝‍♂️','🧞‍♀️','🧞‍♂️','🧟‍♀️','🧟‍♂️','💆‍♀️','💆‍♂️','💇‍♀️','💇‍♂️','🚶‍♀️','🚶‍♂️','🏃‍♀️','🏃‍♂️','💃','🕺','👯‍♀️','👯‍♂️','🧖‍♀️','🧖‍♂️','🧎‍♀️','🧎‍♂️','🧍‍♀️','🧍‍♂️','👭','👫','👬','💑','👩‍❤️‍👩','👨‍❤️‍👨','💏','👩‍❤️‍💋‍👩','👨‍❤️‍💋‍👨'],
     hearts: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌','💋','👥','👤','🗣️','💍','💎','👑','💐','🌸','💮','🏵️','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌲','🌳','🌴','🌵','🌾','🌿','☘️','🍀','🍁','🍂','🍃'],
-    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐗','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🕸️','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','crab','🪸','🐳','🐋','🐬','🦭','🐟','🐠','🐡','🦈','🐊','🐫','giraffe','elephant','🦣','🦏','🦛','🐪','🐫','🦘','🦡','🐾','🐩','🦮','🐕‍🦺','🐈‍⬛','🐈','🐇','🦝','🦨','🦡','Otter','🦥','🐁','🐀','🐿️','🦔','🐉','🐲','🎄','🎆','🎇','🧨','✨','🎈','🎉','🎊','🎋','🎍','🎎','🎏','🎐','🎑','🧧'],
-    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🫓','sandwich','🧆','taco','burrito','salad','🥘','canned','spaghetti','ramen','stew','curry','sushi','bento','dumpling','oyster','fried shrimp','rice ball','rice','rice cracker','fish cake','dango','shaved ice','ice cream','soft ice cream','pie','cupcake','cake','birthday cake','custard','lollipop','candy','chocolate bar','popcorn','donut','cookie','chestnut','peanuts','honey','milk','baby bottle','coffee','tea','green tea','juice','soda','bubble tea','sake','beer','beers','wine','cocktail','tropical drink','champagne','whisky','ice','chopsticks','plate','fork knife','spoon','knife','amphora'],
-    activities: ['⚽','🏀','🏈','⚾','🥎','tennis','volleyball','rugby','frisbee','pool','yo-yo','ping pong','badminton','hockey','field hockey','lacrosse','cricket','boomerang','goal','golf','kite','archery','fishing','diving','boxing','martial arts','running shirt','skateboard','roller skate','curling','skis','skiing','snowboard','paraglider','weight lifting','wrestling','gymnastics','basketball','fencing','handball','golfing','horse racing','yoga','surfing','swimming','water polo','rowing','climbing','biking','mountain biking','trophy','1st place','2nd place','3rd place','medal','military medal','ticket','tickets','circus','juggling','performing arts','art','film','microphone','headphones','score','piano','drum','saxophone','trumpet','guitar','banjo','violin','dice','chess','darts','bowling','video game','slot machine','puzzle','teddy bear','nesting dolls','mirror ball','piñata','sewing','thread','yarn'],
+    animals: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐗','🐽','🐸','🐵','🐒','🦍','🦧','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🕸️','🐢','🐍','蜥','🦖','🦕','🐙','🦑','🦐','🦞','crab','🪸','🐳','🐋','🐬','🦭','🐟','🐠','🐡','🦈','🐊','🐫','giraffe','elephant','🦣','🦏','🦛','🐪','🐫','🦘','🦡','🐾','🐩','🦮','🐕‍🦺','🐈‍⬛','🐈','🐇','🦝','🦨','🦡','Otter','🦥','🐁','🐀','🐿️','🦔','🐉','🐲','🎄','🎆','🎇','🧨','✨','🎈','🎉','🎊','🎋','🎍','🎎','🎏','🎐','🎑','🧧'],
+    food: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','骨','🌭','🍔','🍟','🍕','🫓','sandwich','🧆','taco','burrito','salad','🥘','canned','spaghetti','ramen','stew','curry','sushi','bento','dumpling','oyster','fried shrimp','rice ball','rice','rice cracker','fish cake','dango','shaved ice','ice cream','soft ice cream','pie','cupcake','cake','birthday cake','custard','lollipop','candy','chocolate bar','popcorn','donut','cookie','chestnut','peanuts','honey','milk','baby bottle','coffee','tea','green tea','juice','soda','bubble tea','sake','beer','beers','wine','cocktail','tropical drink','champagne','whisky','ice','chopsticks','plate','fork knife','spoon','knife','amphora'],
+    activities: ['⚽','🏀','🏈','⚾','🥎','tennis','volleyball','rugby','frisbee','pool','yo-yo','ping pong','badminton','hockey','field hockey','lacrosse','cricket','boomerang','goal','golf','kite','archery','fishing','diving','boxing','martial arts','running shirt','skateboard','roller skate','curling','skis','skiing','snowboard','paraglider','weight lifting','wrestling','gymnastics','basketball','fencing','handball','golfing','horse racing','yoga','surfing','swimming','water polo','rowing','climbing','biking','mountain biking','trophy','1st place','2nd place','medal','military medal','ticket','tickets','circus','juggling','performing arts','art','film','microphone','headphones','score','piano','drum','saxophone','trumpet','guitar','banjo','violin','dice','chess','darts','bowling','video game','slot machine','puzzle','teddy bear','nesting dolls','mirror ball','piñata','sewing','thread','yarn'],
     objects: ['💡','flashlight','candle','diya','phone','calling','computer','keyboard','desktop','printer','mouse','trackball','joystick','clamp','minidisc','floppy','cd','dvd','vhs','camera','photo','video camera','movie camera','projector','film frames','telephone','telephone receiver','pager','fax','tv','radio','microphone','level slider','control knobs','compass','stopwatch','timer','alarm clock','mantelpiece clock','hourglass','hourglass flow','satellite','battery','plug','mirror','window','bed','couch','toilet','plunger','shower','bathtub','toothbrush','razor','sponge','bucket','lotion','bell','key','old key','door','chair','shopping bags','shopping cart','gift','balloon','carp streamer','ribbon','magic wand','piñata','confetti','party popper','mirror ball','bell','crystal ball','nazar amulet','hamsa','scroll','paper','bookmark','bar chart','chart line','chart decrease','card index','card box','ballot box','file cabinet','clipboard','file folder','open folder','dividers','newspaper','newspaper2','notebook','notebook1','notebook2','blue book','orange book','books','book','bookmark','safety pin','link','paperclip','paperclips','ruler','triangular ruler','abacus','pushpin','round pushpin','scissors','pen','fountain pen','nib','paintbrush','crayon','memo','pencil','mag','mag right','lock with ink pen','closed lock with key','lock','unlock','wrench','tire','hammer','hammer and pick','tools','pick','axe','saw','nut and bolt','gear','mousetrap','brick','chains','magnet','test tube','petri dish','dna','microscope','telescope','satellite','syringe','drop of blood','pill','adhesive bandage','stethoscope','door','elevator','mirror','window','bed','couch','chair','toilet','plunger','shower','bathtub','mousetrap','razor','toothbrush','sponge','bucket','lotion','bell'],
     travel: ['🚗','taxi','SUV','bus','trolleybus','racing car','police car','ambulance','fire engine','minibus','truck','articulated lorry','tractor','motorcycle','motor scooter','rickshaw','bicycle','kick scooter','wheelchair','motorized wheelchair','monorail','mountain railway','suspension railway','ship','sailboat','speedboat','motor boat','passenger ship','ferry','ship','airplane','small airplane','departure','arrival','paraglider','seat','helicopter','monorail','satellite','rocket','flying saucer','satellite','steam locomotive','railway car','high-speed train','bullet train','train','metro','tram','station','helicopter','motor scooter','rickshaw','anchor','construction','fuel pump','tire','luggage','hourglass','hourglass flow','statue of liberty','tokyo tower','castle','japanese castle','stadium','ferris wheel','roller coaster','carousel','fountain','umbrella','beach','desert island','desert','volcano','mountain','snow mountain','fuji','camping','tent','house','house with garden','homes','derelict house','building construction','factory','office','department store','post office','european post office','hospital','bank','hotel','convenience store','school','love hotel','wedding','museum','church','mosque','hindu temple','synagogue','shinto shrine','kaaba','foggy','night with stars','cityscape','sunrise over mountains','sunrise','city at dusk','sunset','bridge at night','hot springs','milky way','shooting star','sparkler','fireworks','sunset','helmet','ring buoy','sailboat','canoe','speedboat','motor boat','passenger ship','ferry','ship','airplane','small airplane','departure','arrival','paraglider','seat','helicopter','monorail','suspension railway','mountain cableway','satellite','rocket','flying saucer'],
     symbols: ['💯','anger','speech','eye in speech bubble','left speech bubble','right anger bubble','thought','zzz','hole','glasses','sunglasses','goggles','lab coat','safety vest','necktie','t-shirt','jeans','scarf','gloves','coat','socks','dress','kimono','sari','one-piece swimsuit','briefs','shorts','bikini','womans clothes','purse','handbag','clutch','backpack','luggage','left luggage','mans shoe','athletic shoe','hiking boot','flat shoe','high heel','sandal','boot','crown','womans hat','tophat','graduation cap','billed cap','helmet','prayer beads','lipstick','ring','gem','mute','speaker','sound','loudspeaker','megaphone','postal horn','bell','no bell','score','notes','musical note','microphone','headphones','radio','saxophone','accordion','guitar','piano','trumpet','violin','banjo','drum','long drum','phone','calling','telephone','telephone receiver','pager','fax','battery','plug','computer','desktop','printer','keyboard','mouse','trackball','minidisc','floppy','cd','dvd','abacus','movie camera','film frames','projector','clapper','tv','camera','photo','video camera','vhs','mag','mag right','candle','bulb','flashlight','red paper lantern','diya','notebook','notebook1','notebook2','blue book','orange book','books','book','bookmark','safety pin','link','paperclip','paperclips','ruler','triangular ruler','abacus','pushpin','round pushpin','scissors','pen','fountain pen','nib','paintbrush','crayon','memo','pencil','mag','mag right','lock with ink pen','closed lock with key','lock','unlock','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌','zzz','anger','speech','eye in speech bubble','left speech bubble','right anger bubble','thought','hot springs','barber','wireless','atm','put litter in its place','potable water','wheelchair','mens','womens','restroom','baby symbol','elevator','koko','ng','u7981','vs','u6708','u6709','no entry','clock12','clock1230','clock1','clock130','clock2','clock230','clock3','clock330','clock4','clock430','clock5','clock530','clock6','clock630','clock7','clock730','clock8','clock830','clock9','clock930','clock10','clock1030','clock11','clock1130']
@@ -1816,7 +1882,6 @@
     }
   });
 
-  // Отслеживание набора текста собеседником
   function watchTyping(chatId) {
     onValue(ref(db, `chats/${chatId}/typing`), (snapshot) => {
       if (currentChatId !== chatId) return;
@@ -2163,7 +2228,6 @@
     `;
   }
 
-  // Защищенный обработчик отправки формы с защитой от дубликатов
   let isSending = false;
 
   form.addEventListener('submit', (e) => {
@@ -2197,6 +2261,7 @@
             }
           }, 100);
         })
+        .catch((err) => console.error("Ошибка при редактировании:", err))
         .finally(() => {
           isSending = false;
           sendBtn.disabled = false;
@@ -2220,6 +2285,10 @@
       }
 
       push(chatMessagesRef, newMessageData)
+        .then(() => {})
+        .catch((err) => {
+          console.error("Ошибка отправки сообщения:", err);
+        })
         .finally(() => {
           isSending = false;
           sendBtn.disabled = false;
