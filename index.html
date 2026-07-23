@@ -931,6 +931,34 @@
       background: var(--modal-btn-hover) !important;
     }
 
+    /* Telegram-стиль для всплывающих уведомлений (Alert / Toast) */
+    .tg-toast-container {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--header-bg);
+      color: var(--text-color);
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 400;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    .tg-toast-container.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
     .chat-input-wrapper {
       background: var(--header-bg);
       display: none; /* Скрыто по умолчанию для нулевого экрана */
@@ -1115,6 +1143,9 @@
 <body>
 
 <div class="chat-container">
+  <!-- Всплывающее Telegram-уведомление (Toast) -->
+  <div class="tg-toast-container" id="tg-toast">Уведомление</div>
+
   <!-- Боковое меню (Telegram Drawer) -->
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <div class="sidebar" id="sidebar">
@@ -1163,10 +1194,10 @@
       <div class="modal-desc" id="auth-modal-desc">Введите логин и пароль для входа</div>
       
       <div class="tg-input-group">
-        <input type="text" class="modal-input" id="auth-login" placeholder="Логин (например ivan)" autocomplete="username">
-        <input type="password" class="modal-input" id="auth-password" placeholder="Пароль" autocomplete="current-password">
-        <input type="text" class="modal-input" id="auth-name" placeholder="Ваше имя (например, Иван)" style="display:none;" autocomplete="name">
-        <input type="text" class="modal-input" id="auth-username" placeholder="Юзернейм (например, @ivan)" style="display:none;" autocomplete="nickname">
+        <input type="text" class="modal-input" id="auth-login" placeholder="Логин" autocomplete="username">
+        <input type="password" class="modal-input" id="auth-password" placeholder="Пароль (от 6 символов)" autocomplete="current-password">
+        <input type="text" class="modal-input" id="auth-name" placeholder="Имя" style="display:none;" autocomplete="name">
+        <input type="text" class="modal-input" id="auth-username" placeholder="Юзернейм" style="display:none;" autocomplete="nickname">
       </div>
 
       <div class="modal-buttons" style="flex-direction: column; gap: 10px; margin-top: 15px;">
@@ -1181,14 +1212,14 @@
     <div class="modal-box">
       <div class="modal-title">Настройки профиля</div>
       <div class="modal-desc">Измените свои персональные данные:</div>
-      <label style="font-size: 12px; color: var(--subtitle-color);">Имя (Никнейм)</label>
+      <label style="font-size: 12px; color: var(--subtitle-color);">Имя</label>
       <input type="text" class="modal-input" id="settings-name-input" placeholder="Имя">
       
-      <label style="font-size: 12px; color: var(--subtitle-color);">Юзернейм (@username)</label>
+      <label style="font-size: 12px; color: var(--subtitle-color);">Юзернейм</label>
       <input type="text" class="modal-input" id="settings-username-input" placeholder="@username">
       
-      <label style="font-size: 12px; color: var(--subtitle-color);">О себе (Описание)</label>
-      <textarea class="modal-input" id="settings-bio-input" placeholder="Напишите пару слов о себе..."></textarea>
+      <label style="font-size: 12px; color: var(--subtitle-color);">Описание</label>
+      <textarea class="modal-input" id="settings-bio-input" placeholder="Пару слов о себе"></textarea>
       
       <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
         <div class="sidebar-btn danger" id="logout-btn" style="padding: 10px 0; border-radius: 8px; justify-content: center; background: rgba(229,57,53,0.1); cursor: pointer;">
@@ -1274,6 +1305,16 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, get, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  // Функция для показа Telegram-уведомления (вместо стандартного alert)
+  function showTgToast(message) {
+    const toast = document.getElementById('tg-toast');
+    toast.textContent = message;
+    toast.classList.add('active');
+    setTimeout(() => {
+      toast.classList.remove('active');
+    }, 2500);
+  }
 
   const themeBtn = document.getElementById('theme-btn');
   let currentTheme = localStorage.getItem('chat_theme') || 'dark';
@@ -1382,7 +1423,7 @@
       input.disabled = true;
       sendBtn.disabled = true;
     }).catch((error) => {
-      alert('Ошибка при выходе из аккаунта: ' + error.message);
+      showTgToast('Ошибка при выходе из аккаунта');
     });
   });
 
@@ -1434,7 +1475,7 @@
     let handle = authUsernameInput.value.trim();
 
     if (!login || !password) {
-      alert('Заполните логин и пароль!');
+      showTgToast('Заполните логин и пароль!');
       return;
     }
 
@@ -1442,18 +1483,18 @@
 
     if (isRegisterMode) {
       if (!name) {
-        alert('Введите отображаемое имя!');
+        showTgToast('Введите отображаемое имя!');
         return;
       }
       if (!handle) {
-        alert('Введите юзернейм!');
+        showTgToast('Введите юзернейм!');
         return;
       }
       if (!handle.startsWith('@')) {
         handle = '@' + handle;
       }
       if (login.length < 3) {
-        alert('Логин должен содержать не менее 3 символов!');
+        showTgToast('Логин должен содержать от 3 символов!');
         return;
       }
 
@@ -1476,9 +1517,9 @@
         })
         .catch((error) => {
           if (error.code === 'auth/email-already-in-use') {
-            alert('Этот логин уже занят другим пользователем!');
+            showTgToast('Этот логин уже занят!');
           } else {
-            alert('Ошибка регистрации: ' + error.message);
+            showTgToast('Ошибка регистрации');
           }
         });
     } else {
@@ -1502,7 +1543,7 @@
           });
         })
         .catch((error) => {
-          alert('Неверный логин или пароль!');
+          showTgToast('Неверный логин или пароль!');
         });
     }
   });
@@ -1566,11 +1607,11 @@
     const newBio = settingsBioInput.value.trim();
 
     if (!newName) {
-      alert('Имя не может быть пустым!');
+      showTgToast('Имя не может быть пустым!');
       return;
     }
     if (!newHandle) {
-      alert('Юзернейм не может быть пустым!');
+      showTgToast('Юзернейм не может быть пустым!');
       return;
     }
     if (!newHandle.startsWith('@')) {
@@ -1590,7 +1631,7 @@
         }
 
         if (exists) {
-          alert('Этот юзернейм уже занят другим пользователем!');
+          showTgToast('Этот юзернейм уже занят!');
         } else {
           saveProfileChanges(newName, newHandle, newBio);
         }
@@ -1611,7 +1652,7 @@
       userBio = newBio;
       initUserSession();
       settingsModal.classList.remove('active');
-      alert('Профиль успешно обновлен!');
+      showTgToast('Профиль успешно обновлен!');
     });
   }
 
@@ -1622,7 +1663,7 @@
       if (!query.startsWith('@')) query = '@' + query;
 
       if (query === userHandle.toLowerCase()) {
-        alert('Нельзя создать чат с самим собой!');
+        showTgToast('Нельзя создать чат с самим собой!');
         return;
       }
 
@@ -1642,7 +1683,7 @@
             sidebar.classList.remove('active');
             sidebarOverlay.classList.remove('active');
           } else {
-            alert('Пользователь с таким юзернейм не найден!');
+            showTgToast('Пользователь не найден!');
           }
         }
       });
