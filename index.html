@@ -442,6 +442,7 @@
       color: var(--text-color); box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       transition: background 0.3s ease, color 0.3s ease, transform 0.25s ease, opacity 0.25s ease;
       animation: messageAppear 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; user-select: none;
+      -webkit-touch-callout: none; -webkit-user-select: none;
     }
     @keyframes messageAppear { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
     .message.removing { animation: messageRemove 0.3s ease forwards; }
@@ -471,13 +472,29 @@
     .edited-mark { font-style: italic; }
     .status-ticks { display: inline-flex; align-items: center; vertical-align: middle; width: 16px; height: 12px; }
     .status-ticks svg { width: 16px; height: 12px; fill: currentColor; }
+    .status-ticks.read { width: 20px; color: var(--telegram-blue); }
+    .status-ticks.read svg { width: 20px; }
 
     .message-reactions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
     .reaction-badge { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 10px; font-size: 12px; display: flex; align-items: center; gap: 3px; cursor: pointer; transition: transform 0.1s ease, background 0.15s ease; }
     .reaction-badge:hover { transform: scale(1.08); background: rgba(0, 0, 0, 0.3); }
+    .reaction-badge.mine { border-color: var(--telegram-blue); background: rgba(82, 136, 193, 0.25); }
+    .reaction-badge .reaction-count { font-weight: 600; opacity: 0.9; }
     .message.my .reaction-badge { background: rgba(0, 0, 0, 0.18); }
+    .message.my .reaction-badge.mine { background: rgba(255, 255, 255, 0.22); }
+
+    .react-trigger-btn { font-size: 14px; opacity: 0.85; }
+    .msg-actions-btn { font-size: 14px; opacity: 0.85; font-weight: 700; line-height: 1; }
+
+    .message-actions-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 160px; background: var(--modal-bg); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 24px rgba(0,0,0,0.4); border-radius: 12px; padding: 4px; z-index: 50; opacity: 0; transform: scale(0.9) translateY(-6px); pointer-events: none; transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease; }
+    .message-actions-menu.align-right { left: auto; right: 0; }
+    .message-actions-menu.active { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+    .message-actions-item { padding: 8px 14px; font-size: 14px; color: var(--text-color); border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s ease; }
+    .message-actions-item:hover { background: var(--modal-btn-hover); }
+    .message-actions-item.danger { color: var(--danger-color); }
 
     .reaction-picker { position: absolute; bottom: calc(100% + 8px); left: 0; transform: scale(0.85) translateY(8px); background: var(--header-bg); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 24px rgba(0,0,0,0.4); border-radius: 20px; padding: 6px 8px; display: inline-flex; flex-direction: column; align-items: flex-start; z-index: 50; opacity: 0; pointer-events: none; width: max-content; max-width: 90vw; box-sizing: border-box; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease, width 0.3s ease; }
+    .reaction-picker.align-right { left: auto; right: 0; }
     .reaction-picker.active { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
     .reaction-picker .quick-emojis { display: inline-flex; align-items: center; justify-content: flex-start; gap: 2px; }
     .reaction-picker .quick-emojis span { font-size: 22px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease; }
@@ -493,6 +510,12 @@
     .extended-grid::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 4px; }
     .extended-grid span { font-size: 22px; text-align: center; cursor: pointer; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: background 0.1s ease, transform 0.1s ease; }
     .extended-grid span:hover { background: var(--modal-btn-hover); transform: scale(1.2); }
+
+    .msg-popup-menu { display: flex; flex-direction: column; align-items: stretch; width: 100%; min-width: 190px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .msg-popup-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; font-size: 14px; color: var(--text-color); border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s ease; }
+    .msg-popup-item:hover { background: var(--modal-btn-hover); }
+    .msg-popup-item.danger { color: var(--danger-color); }
+    .msg-popup-item-icon { font-size: 15px; width: 18px; display: inline-flex; align-items: center; justify-content: center; opacity: 0.9; }
 
     @keyframes popHeart { 0% { transform: scale(0.3) translateY(0); opacity: 0; } 50% { transform: scale(1.3) translateY(-15px); opacity: 1; } 100% { transform: scale(1) translateY(-25px); opacity: 0; } }
     .floating-heart { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 28px; pointer-events: none; animation: popHeart 0.6s ease forwards; z-index: 20; }
@@ -1059,7 +1082,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, get, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove, set, get, onValue, onDisconnect, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   function showTgToast(message) {
@@ -1069,7 +1092,6 @@
     setTimeout(() => { toast.classList.remove('active'); }, 2500);
   }
 
-  // Функция для сжатия изображения перед конвертацией в base64 (чтобы не забивать лимиты Realtime Database)
   function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.8) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -1143,6 +1165,11 @@
   const input = document.getElementById('message-input');
   const sendBtn = document.getElementById('send-btn');
   const chatInputWrapper = document.getElementById('chat-input-wrapper');
+  const actionBar = document.getElementById('action-bar');
+  const actionBarLine = document.getElementById('action-bar-line');
+  const actionBarTitle = document.getElementById('action-bar-title');
+  const actionBarText = document.getElementById('action-bar-text');
+  const cancelActionBtn = document.getElementById('cancel-action');
   const headerTitle = document.getElementById('header-title');
   const headerBio = document.getElementById('header-bio');
   const headerSubtitle = document.getElementById('header-subtitle');
@@ -1150,7 +1177,6 @@
   const headerAvatarLetter = document.getElementById('header-avatar-letter');
   const headerStatusDot = document.getElementById('header-status-dot');
   
-  // Элементы профиля пользователя (Telegram style)
   const profileModal = document.getElementById('profile-modal');
   const openProfileBtn = document.getElementById('open-profile-btn');
   const openProfileTextBtn = document.getElementById('open-profile-text-btn');
@@ -1177,7 +1203,6 @@
   const deleteChatCancel = document.getElementById('delete-chat-cancel');
   const deleteChatConfirm = document.getElementById('delete-chat-confirm');
 
-  // Лайтбокс элементы
   const lightboxModal = document.getElementById('lightbox-modal');
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxClose = document.getElementById('lightbox-close');
@@ -1197,7 +1222,6 @@
     profileModal.classList.remove('active');
   });
 
-  // Логика удаления чата (у обоих пользователей)
   deleteChatBtn.addEventListener('click', () => {
     if (!currentPartner || !currentChatId) return;
     deleteChatDesc.innerHTML = `История сообщений с пользователем <strong>${currentPartner.name}</strong> будет удалена для обоих пользователей.`;
@@ -1284,7 +1308,6 @@
   const emojiGrid = document.getElementById('emoji-grid');
   const emojiTabs = document.getElementById('emoji-tabs');
 
-  // Логика медиафайлов
   const attachBtn = document.getElementById('attach-btn');
   const mediaFileInput = document.getElementById('media-file-input');
   const mediaPreviewBox = document.getElementById('media-preview-box');
@@ -1293,7 +1316,7 @@
   const mediaPreviewSize = document.getElementById('media-preview-size');
   const mediaPreviewRemove = document.getElementById('media-preview-remove');
 
-  let selectedMedia = null; // { type, data, name, size, mime }
+  let selectedMedia = null;
 
   attachBtn.addEventListener('click', () => {
     if (!currentChatId) return showTgToast('Сначала выберите чат!');
@@ -1305,14 +1328,14 @@
     if (!file) return;
 
     let fileType = 'file';
-    let maxSize = 10 * 1024 * 1024; // по умолчанию 10 MB для файлов
+    let maxSize = 10 * 1024 * 1024;
 
     if (file.type.startsWith('image/')) {
       fileType = 'image';
-      maxSize = 5 * 1024 * 1024; // 5 MB для фото
+      maxSize = 5 * 1024 * 1024;
     } else if (file.type.startsWith('video/')) {
       fileType = 'video';
-      maxSize = 20 * 1024 * 1024; // 20 MB для видео
+      maxSize = 20 * 1024 * 1024;
     }
 
     if (file.size > maxSize) {
@@ -1345,7 +1368,6 @@
         mime: file.type || 'application/octet-stream'
       };
 
-      // Рендер preview
       mediaPreviewName.textContent = file.name;
       mediaPreviewSize.textContent = sizeFormatted;
 
@@ -1476,8 +1498,10 @@
   let isRegisterMode = false;
   let userId = null; let username = null; let userHandle = null; let userBio = null; let userAvatarUrl = null;
   let currentChatId = null; let currentPartner = null;
+  let replyingTo = null; // { id, author, text } — активный ответ, не трогает структуру сообщений
+  let editingMessageId = null; // id редактируемого сообщения
   let partnerStatusUnsubscribe = null;
-  let newAvatarBase64 = null; // Временное хранение аватара перед сохранением
+  let newAvatarBase64 = null;
 
   authSwitchBtn.addEventListener('click', () => {
     isRegisterMode = !isRegisterMode;
@@ -1509,7 +1533,12 @@
       if (!name) return showTgToast('Введите отображаемое имя!');
       if (!handle) return showTgToast('Введите юзернейм!');
       let checkHandle = handle.startsWith('@') ? handle.substring(1) : handle;
-      if (!/^[a-zA-Z0-9_]{5,}$/.test(checkHandle)) return showTgToast('Допустимые символы: a-z; 0-9; _');
+      
+      // ИЗМЕНЕНО: Регулярное выражение для поддержки кириллицы (а-я, А-Я, ё, Ё), латиницы, цифр и подчёркивания (длина от 3 до 25)
+      if (!/^[a-zA-Zа-яА-ЯёЁ0-9_]{3,25}$/.test(checkHandle)) {
+        return showTgToast('Юзернейм: от 3 до 25 символов (буквы, цифры, _)');
+      }
+
       if (!handle.startsWith('@')) handle = '@' + handle;
       if (login.length < 3) return showTgToast('Логин от 3 символов!');
 
@@ -1667,7 +1696,12 @@
     if (!newName) return showTgToast('Имя не может быть пустым!');
     if (!newHandle) return showTgToast('Юзернейм не может быть пустым!');
     let checkHandle = newHandle.startsWith('@') ? newHandle.substring(1) : newHandle;
-    if (!/^[a-zA-Z0-9_]{5,}$/.test(checkHandle)) return showTgToast('Допустимые символы: a-z; 0-9; _');
+    
+    // ИЗМЕНЕНО: Регулярное выражение для поддержки кириллицы (а-я, А-Я, ё, Ё), латиницы, цифр и подчёркивания (длина от 3 до 25)
+    if (!/^[a-zA-Zа-яА-ЯёЁ0-9_]{3,25}$/.test(checkHandle)) {
+      return showTgToast('Юзернейм: от 3 до 25 символов (буквы, цифры, _)');
+    }
+
     if (!newHandle.startsWith('@')) newHandle = '@' + newHandle;
 
     if (newHandle.toLowerCase() !== userHandle.toLowerCase()) {
@@ -1866,19 +1900,30 @@
       msgEl.className = `message ${isMy ? 'my' : 'other'}`; msgEl.id = `msg-${id}`; 
       msgEl.innerHTML = buildMessageHTML(chatId, id, data);
       
-      // Навешиваем клик на изображения для открытия в лайтбоксе
       const imgElem = msgEl.querySelector('.msg-image');
       if (imgElem) {
-        imgElem.onclick = () => {
+        imgElem.onclick = (ev) => {
+          ev.stopPropagation();
           lightboxImg.src = imgElem.src;
           lightboxModal.classList.add('active');
         };
       }
+      attachReactionHandlers(msgEl, chatId, id, data);
+      attachMessageInteractionHandlers(msgEl, chatId, id, data);
 
-      msgEl.addEventListener('dblclick', () => handleMessageDblClick(chatId, id));
-      msgEl.addEventListener('contextmenu', (e) => openReactionPicker(chatId, id, e));
+      // Собеседник открыл чат (или получил новое сообщение, пока чат открыт) —
+      // отмечаем чужие непрочитанные сообщения как прочитанные в Firebase.
+      if (data.userId !== userId && data.read === false && currentChatId === chatId) {
+        update(ref(db, `chats/${chatId}/messages/${id}`), { read: true }).catch(() => {});
+      }
+
+      msgEl.addEventListener('dblclick', (e) => {
+        if (msgClickTimer) { clearTimeout(msgClickTimer); msgClickTimer = null; }
+        handleMessageDblClick(chatId, id);
+      });
+      msgEl.addEventListener('contextmenu', (e) => openReactionPicker(chatId, id, data, e));
       let pressTimer;
-      msgEl.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { openReactionPicker(chatId, id, e); }, 500); });
+      msgEl.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { openReactionPicker(chatId, id, data, e); }, 500); });
       msgEl.addEventListener('touchend', () => clearTimeout(pressTimer));
       msgEl.addEventListener('touchmove', () => clearTimeout(pressTimer));
       messagesDiv.appendChild(msgEl); messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -1887,14 +1932,21 @@
       const data = snapshot.val(); const id = snapshot.key;
       const msgEl = document.getElementById(`msg-${id}`);
       if (msgEl) {
+        const wasPickerOpen = activeReactionPicker && msgEl.contains(activeReactionPicker);
+        if (wasPickerOpen) closeReactionPicker();
+        const wasMenuOpen = activeMessageActionsMenu && msgEl.contains(activeMessageActionsMenu);
+        if (wasMenuOpen) closeMessageActionsMenu();
         msgEl.innerHTML = buildMessageHTML(chatId, id, data);
         const imgElem = msgEl.querySelector('.msg-image');
         if (imgElem) {
-          imgElem.onclick = () => {
+          imgElem.onclick = (ev) => {
+            ev.stopPropagation();
             lightboxImg.src = imgElem.src;
             lightboxModal.classList.add('active');
           };
         }
+        attachReactionHandlers(msgEl, chatId, id, data);
+        attachMessageInteractionHandlers(msgEl, chatId, id, data);
       }
     });
     onChildRemoved(chatMessagesRef, (snapshot) => {
@@ -1906,7 +1958,6 @@
     });
   }
 
-  // Рендер HTML сообщения с поддержкой медиа
   function buildMessageHTML(chatId, id, data) {
     let mediaHTML = '';
     if (data.media) {
@@ -1929,14 +1980,40 @@
 
     let textHTML = data.text ? `<div class="message-text">${escapeHTML(data.text)}</div>` : '';
 
+    const reactionsHTML = buildReactionsHTML(data.reactions);
+    const replyHTML = buildReplyPreviewHTML(data.replyTo);
+    const editedHTML = data.edited ? '<span class="edited-mark">изменено</span>' : '';
+    const isMy = data.userId === userId;
+    const statusTicksHTML = buildStatusTicksHTML(isMy, data.read === true);
+
     return `
       <div class="message-author">${escapeHTML(data.author)}</div>
+      ${replyHTML}
       ${mediaHTML}
       ${textHTML}
+      ${reactionsHTML}
       <div class="message-meta">
+        ${editedHTML}
         <span class="message-time">${formatTime(data.timestamp)}</span>
-        <span class="status-ticks"><svg viewBox="0 0 16 11"><path d="M11.071 0.652L4.5 7.223L1.929 4.652A1 1 0 1 0 0.515 6.066l3.5 3.5a1 1 0 0 0 1.414 0l7.5-7.5a1 1 0 0 0-1.414-1.414z"/></svg></span>
+        ${statusTicksHTML}
+      </div>
+      <div class="msg-controls">
+        <span class="react-trigger-btn" title="Реакция"></span>
+        <span class="msg-actions-btn" title="Действия"></span>
       </div>`;
+  }
+
+  // Галочки прочтения: показываются только у собственных сообщений.
+  // Одна галочка — отправлено, не прочитано. Две синие галочки — прочитано собеседником.
+  function buildStatusTicksHTML(isMy, isRead) {
+    if (!isMy) return '';
+    if (isRead) {
+      return `<span class="status-ticks read" title="Прочитано"><svg viewBox="0 0 20 11">
+        <path d="M7.071 0.652L0.5 7.223L-2.071 4.652A1 1 0 1 0 -3.485 6.066l3.5 3.5a1 1 0 0 0 1.414 0l7.5-7.5a1 1 0 0 0-1.414-1.414z" transform="translate(3,0)"/>
+        <path d="M15.071 0.652L8.5 7.223L5.929 4.652A1 1 0 1 0 4.515 6.066l3.5 3.5a1 1 0 0 0 1.414 0l7.5-7.5a1 1 0 0 0-1.414-1.414z"/>
+      </svg></span>`;
+    }
+    return `<span class="status-ticks" title="Отправлено"><svg viewBox="0 0 16 11"><path d="M11.071 0.652L4.5 7.223L1.929 4.652A1 1 0 1 0 0.515 6.066l3.5 3.5a1 1 0 0 0 1.414 0l7.5-7.5a1 1 0 0 0-1.414-1.414z"/></svg></span>`;
   }
 
   function escapeHTML(str) {
@@ -1954,13 +2031,378 @@
     return `${hours}:${mins}`;
   }
 
-  function handleMessageDblClick(chatId, id) {
-    // базовая заглушка
+  // ===================== МОДУЛЬ РЕАКЦИЙ (не затрагивает остальную логику чата) =====================
+
+  // Полный поддерживаемый набор эмодзи. Чтобы добавить новую реакцию, достаточно дописать её сюда.
+  const REACTION_EMOJIS = ['❤️', '👍', '😂', '🔥', '🤩', '🥰', '🤡', '😢', '🥱', '👎', '💩', '💔'];
+  // Компактная панель быстрого выбора (как в Telegram), остальные — в раскрывающейся панели "ещё"
+  const QUICK_REACTION_EMOJIS = ['😂', '🥰', '🤩','🤩','❤️', '👍', '🔥'];
+  const MORE_REACTION_EMOJIS = REACTION_EMOJIS.filter(e => !QUICK_REACTION_EMOJIS.includes(e));
+  const MAX_REACTIONS_PER_USER = 2;
+
+  let activeReactionPicker = null;
+
+  function closeReactionPicker() {
+    if (activeReactionPicker) {
+      const picker = activeReactionPicker;
+      picker.classList.remove('active', 'expanded');
+      activeReactionPicker = null;
+      setTimeout(() => picker.remove(), 200);
+    }
   }
 
-  function openReactionPicker(chatId, id, e) {
-    e.preventDefault();
+  // Закрывать панель при клике вне неё, не ломая остальные обработчики кликов
+  document.addEventListener('click', (e) => {
+    if (activeReactionPicker && !e.target.closest('.reaction-picker') && !e.target.closest('.react-trigger-btn')) {
+      closeReactionPicker();
+    }
+  });
+
+  function buildReactionPickerElement(chatId, id, data) {
+    const picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+
+    const quickRow = document.createElement('div');
+    quickRow.className = 'quick-emojis';
+
+    QUICK_REACTION_EMOJIS.forEach(emoji => {
+      const span = document.createElement('span');
+      span.textContent = emoji;
+      span.addEventListener('click', (ev) => { ev.stopPropagation(); toggleReaction(chatId, id, emoji); closeReactionPicker(); });
+      quickRow.appendChild(span);
+    });
+
+    if (MORE_REACTION_EMOJIS.length) {
+      const moreBtn = document.createElement('button');
+      moreBtn.type = 'button';
+      moreBtn.className = 'more-reactions-btn';
+      moreBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>';
+      moreBtn.addEventListener('click', (ev) => { ev.stopPropagation(); picker.classList.toggle('expanded'); });
+      quickRow.appendChild(moreBtn);
+    }
+
+    picker.appendChild(quickRow);
+
+    if (MORE_REACTION_EMOJIS.length) {
+      const extendedPanel = document.createElement('div');
+      extendedPanel.className = 'extended-reactions-panel';
+      const extendedGrid = document.createElement('div');
+      extendedGrid.className = 'extended-grid';
+      MORE_REACTION_EMOJIS.forEach(emoji => {
+        const span = document.createElement('span');
+        span.textContent = emoji;
+        span.addEventListener('click', (ev) => { ev.stopPropagation(); toggleReaction(chatId, id, emoji); closeReactionPicker(); });
+        extendedGrid.appendChild(span);
+      });
+      extendedPanel.appendChild(extendedGrid);
+      picker.appendChild(extendedPanel);
+    }
+
+    // Меню действий в стиле Telegram (иконка + подпись), объединено с панелью реакций в один попап
+    if (data) {
+      const isMy = data.userId === userId;
+      const menu = document.createElement('div');
+      menu.className = 'msg-popup-menu';
+
+      const addItem = (icon, label, handler, danger) => {
+        const item = document.createElement('div');
+        item.className = 'msg-popup-item' + (danger ? ' danger' : '');
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'msg-popup-item-icon';
+        iconSpan.textContent = icon;
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = label;
+        item.appendChild(iconSpan);
+        item.appendChild(labelSpan);
+        item.addEventListener('click', (ev) => { ev.stopPropagation(); closeReactionPicker(); handler(); });
+        menu.appendChild(item);
+      };
+
+      addItem('↩', 'Ответить', () => startReply(chatId, id, data));
+      if (isMy) addItem('✏️', 'Изменить', () => startEdit(chatId, id, data));
+      if (data.text) addItem('📋', 'Копировать', () => copyMessageText(data.text));
+      if (isMy) addItem('🗑', 'Удалить', () => deleteMessage(chatId, id), true);
+
+      picker.appendChild(menu);
+    }
+
+    return picker;
   }
+
+  function copyMessageText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showTgToast('Текст скопирован')).catch(() => showTgToast('Не удалось скопировать'));
+    } else {
+      showTgToast('Копирование недоступно');
+    }
+  }
+
+  function openReactionPicker(chatId, id, data, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (activeReactionPicker) closeReactionPicker();
+    closeMessageActionsMenu();
+
+    const msgEl = document.getElementById(`msg-${id}`);
+    if (!msgEl) return;
+
+    const picker = buildReactionPickerElement(chatId, id, data);
+    if (msgEl.classList.contains('my')) picker.classList.add('align-right');
+
+    msgEl.appendChild(picker);
+    activeReactionPicker = picker;
+    requestAnimationFrame(() => picker.classList.add('active'));
+  }
+
+  function handleMessageDblClick(chatId, id) {
+    toggleReaction(chatId, id, '❤️');
+    const msgEl = document.getElementById(`msg-${id}`);
+    if (msgEl) {
+      const heart = document.createElement('div');
+      heart.className = 'floating-heart';
+      heart.textContent = '❤️';
+      msgEl.appendChild(heart);
+      setTimeout(() => heart.remove(), 650);
+    }
+  }
+
+  // Атомарное добавление/удаление реакции через Firebase transaction —
+  // исключает "затирание" реакций при одновременных изменениях у разных пользователей.
+  function toggleReaction(chatId, messageId, emoji) {
+    if (!userId || !chatId || !messageId) return;
+    if (REACTION_EMOJIS.indexOf(emoji) === -1) return;
+
+    const reactionsRef = ref(db, `chats/${chatId}/messages/${messageId}/reactions`);
+
+    runTransaction(reactionsRef, (currentReactions) => {
+      const reactions = currentReactions || {};
+
+      // Если реакция уже стоит — убираем её
+      if (reactions[emoji] && reactions[emoji][userId]) {
+        const updated = {};
+        for (const em in reactions) {
+          if (em === emoji) {
+            const remainingUsers = { ...reactions[em] };
+            delete remainingUsers[userId];
+            if (Object.keys(remainingUsers).length > 0) updated[em] = remainingUsers;
+          } else {
+            updated[em] = reactions[em];
+          }
+        }
+        return updated;
+      }
+
+      // Считаем, сколько реакций уже стоит у этого пользователя на сообщении
+      let userReactionCount = 0;
+      for (const em in reactions) {
+        if (reactions[em] && reactions[em][userId]) userReactionCount++;
+      }
+
+      if (userReactionCount >= MAX_REACTIONS_PER_USER) {
+        // Возврат undefined прерывает транзакцию без изменений
+        return;
+      }
+
+      const updated = { ...reactions };
+      updated[emoji] = { ...(updated[emoji] || {}), [userId]: true };
+      return updated;
+    }).then((result) => {
+      if (!result.committed) {
+        showTgToast('Максимум 2 реакции на сообщение. Уберите одну, чтобы поставить новую.');
+      }
+    }).catch(() => {
+      showTgToast('Ошибка при добавлении реакции');
+    });
+
+    closeReactionPicker();
+  }
+
+  function buildReactionsHTML(reactions) {
+    if (!reactions) return '';
+    const entries = Object.entries(reactions).filter(([, users]) => users && Object.keys(users).length > 0);
+    if (entries.length === 0) return '';
+
+    const badges = entries.map(([emoji, users]) => {
+      const count = Object.keys(users).length;
+      const mine = userId && users[userId] ? ' mine' : '';
+      const safeEmoji = escapeHTML(emoji);
+      return `<span class="reaction-badge${mine}" data-emoji="${safeEmoji}">${safeEmoji} <span class="reaction-count">${count}</span></span>`;
+    }).join('');
+
+    return `<div class="message-reactions">${badges}</div>`;
+  }
+
+  function attachReactionHandlers(msgEl, chatId, id, data) {
+    msgEl.querySelectorAll('.reaction-badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleReaction(chatId, id, badge.getAttribute('data-emoji'));
+      });
+    });
+    const triggerBtn = msgEl.querySelector('.react-trigger-btn');
+    if (triggerBtn) {
+      triggerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openReactionPicker(chatId, id, data, e);
+      });
+    }
+  }
+
+  // ===================== КОНЕЦ МОДУЛЯ РЕАКЦИЙ =====================
+
+  // ===================== МОДУЛЬ ДЕЙСТВИЙ С СООБЩЕНИЯМИ (Ответить / Изменить / Удалить) =====================
+
+  let activeMessageActionsMenu = null;
+
+  function closeMessageActionsMenu() {
+    if (activeMessageActionsMenu) {
+      const menu = activeMessageActionsMenu;
+      menu.classList.remove('active');
+      activeMessageActionsMenu = null;
+      setTimeout(() => menu.remove(), 150);
+    }
+  }
+
+  // Закрывать меню действий при клике вне него
+  document.addEventListener('click', (e) => {
+    if (activeMessageActionsMenu && !e.target.closest('.message-actions-menu') && !e.target.closest('.msg-actions-btn')) {
+      closeMessageActionsMenu();
+    }
+  });
+
+  // Меню действий теперь встроено в единый попап (реакции + действия), см. openReactionPicker.
+  function openMessageActionsMenu(chatId, id, data, e) {
+    openReactionPicker(chatId, id, data, e);
+  }
+
+  function replyPreviewLabel(data) {
+    if (data.text) return data.text;
+    if (data.media) {
+      if (data.media.type === 'image') return '📷 Фото';
+      if (data.media.type === 'video') return '🎥 Видео';
+      if (data.media.type === 'file') return `📄 ${data.media.name || 'Файл'}`;
+    }
+    return '';
+  }
+
+  function buildReplyPreviewHTML(replyTo) {
+    if (!replyTo) return '';
+    return `<div class="message-reply" data-reply-id="${escapeHTML(replyTo.id)}">
+        <div class="reply-author">${escapeHTML(replyTo.author)}</div>
+        <div class="reply-text">${escapeHTML(replyTo.text)}</div>
+      </div>`;
+  }
+
+  let msgClickTimer = null;
+
+  function attachMessageInteractionHandlers(msgEl, chatId, id, data) {
+    const replyPreview = msgEl.querySelector('.message-reply');
+    if (replyPreview) {
+      replyPreview.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetId = replyPreview.getAttribute('data-reply-id');
+        const targetEl = document.getElementById(`msg-${targetId}`);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetEl.classList.add('highlight');
+          setTimeout(() => targetEl.classList.remove('highlight'), 1500);
+        }
+      });
+    }
+
+    const actionsBtn = msgEl.querySelector('.msg-actions-btn');
+    if (actionsBtn) {
+      actionsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openReactionPicker(chatId, id, data, e);
+      });
+    }
+
+    // Клик по самому сообщению (не по вложенным интерактивным элементам) открывает меню,
+    // как в Telegram. Не мешает выделению текста, свайпам и прокрутке — открывается только
+    // после короткой паузы, чтобы не конфликтовать с двойным кликом (реакция ❤️).
+    msgEl.addEventListener('click', (e) => {
+      if (e.target.closest('.msg-actions-btn') || e.target.closest('.react-trigger-btn') ||
+          e.target.closest('.message-reply') || e.target.closest('.reaction-badge') ||
+          e.target.closest('.msg-image') || e.target.closest('.msg-file-card') ||
+          e.target.closest('.msg-video') || e.target.closest('.reaction-picker')) {
+        return;
+      }
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) return;
+
+      if (msgClickTimer) { clearTimeout(msgClickTimer); msgClickTimer = null; return; }
+      msgClickTimer = setTimeout(() => {
+        msgClickTimer = null;
+        openReactionPicker(chatId, id, data, e);
+      }, 220);
+    });
+  }
+
+  function showActionBar(title, text) {
+    actionBarTitle.textContent = title;
+    actionBarText.textContent = text;
+    actionBar.classList.add('active');
+  }
+
+  function cancelComposerAction() {
+    replyingTo = null;
+    if (editingMessageId) {
+      editingMessageId = null;
+      input.value = '';
+      autoResizeTextarea();
+    }
+    actionBar.classList.remove('active');
+  }
+
+  cancelActionBtn.addEventListener('click', () => cancelComposerAction());
+
+  function startReply(chatId, id, data) {
+    editingMessageId = null;
+    replyingTo = { id, author: data.author, text: replyPreviewLabel(data) };
+    showActionBar(data.author, replyingTo.text);
+    input.focus();
+  }
+
+  function startEdit(chatId, id, data) {
+    if (data.userId !== userId) return; // изменять может только автор
+    replyingTo = null;
+    editingMessageId = id;
+    showActionBar('Редактирование сообщения', data.text || '');
+    input.value = data.text || '';
+    autoResizeTextarea();
+    input.focus();
+  }
+
+  function saveMessageEdit(chatId, messageId, newText) {
+    if (!chatId || !messageId) return;
+    const trimmed = newText.trim();
+    if (!trimmed) { showTgToast('Сообщение не может быть пустым'); return; }
+
+    update(ref(db, `chats/${chatId}/messages/${messageId}`), {
+      text: trimmed,
+      edited: true
+    }).then(() => {
+      editingMessageId = null;
+      replyingTo = null;
+      actionBar.classList.remove('active');
+      input.value = '';
+      autoResizeTextarea();
+    }).catch(() => {
+      showTgToast('Ошибка при редактировании сообщения');
+    });
+  }
+
+  function deleteMessage(chatId, messageId) {
+    if (!chatId || !messageId) return; // доступно автору — пункт меню и так показан только для своих сообщений
+    remove(ref(db, `chats/${chatId}/messages/${messageId}`)).then(() => {
+      if (editingMessageId === messageId) cancelComposerAction();
+    }).catch(() => {
+      showTgToast('Ошибка при удалении сообщения');
+    });
+  }
+
+  // ===================== КОНЕЦ МОДУЛЯ ДЕЙСТВИЙ С СООБЩЕНИЯМИ =====================
 
   const emojiCategories = {
     smileys: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
@@ -2003,7 +2445,6 @@
   function autoResizeTextarea() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
   input.addEventListener('input', autoResizeTextarea);
 
-  // Функция отправки сообщений (поддерживает текст и опциональный параметр media)
   function sendMessage(text, media = null) {
     if (!currentChatId || (!text.trim() && !media)) return;
 
@@ -2011,8 +2452,14 @@
       userId: userId,
       author: username,
       text: text.trim(),
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
+      reactions: {}, // Подготовленная структура для будущих реакций без изменения текущих сообщений
+      read: false // Статус прочтения: false пока получатель не открыл чат
     };
+
+    if (replyingTo) {
+      messageData.replyTo = { id: replyingTo.id, author: replyingTo.author, text: replyingTo.text };
+    }
 
     if (media) {
       messageData.type = media.type;
@@ -2032,24 +2479,33 @@
       autoResizeTextarea();
       selectedMedia = null;
       mediaPreviewBox.style.display = 'none';
+      replyingTo = null;
+      actionBar.classList.remove('active');
     }).catch(() => {
       showTgToast('Ошибка отправки сообщения');
     });
   }
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
+  // Единая точка отправки формы: если идёт редактирование — сохраняет правку, иначе отправляет как обычно
+  function handleComposerSubmit() {
     const text = input.value;
+    if (editingMessageId) {
+      saveMessageEdit(currentChatId, editingMessageId, text);
+      return;
+    }
     if (!text.trim() && !selectedMedia) return;
     sendMessage(text, selectedMedia);
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleComposerSubmit();
   });
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      const text = input.value;
-      if (!text.trim() && !selectedMedia) return;
-      sendMessage(text, selectedMedia);
+      handleComposerSubmit();
     }
   });
 
